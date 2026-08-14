@@ -18,6 +18,31 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
+## Listing scraper
+
+Paste a Leboncoin or SeLoger URL on the landing screen (or in the top bar) to
+pull real listing data — price, surface, DPE, description, photo — into the
+analysis.
+
+Rather than fetching HTML and fighting DataDome, `POST /api/scrape` runs
+ready-made [Apify](https://apify.com) actors that return structured data:
+
+- Leboncoin → `scrapifier/leboncoin-universal-scraper`
+- SeLoger → `azzouzana/seloger-mass-products-scraper-by-items-urls`
+
+Configure a token in `.env.local` (see `.env.example`):
+
+```
+APIFY_TOKEN=your_apify_token
+```
+
+The "démo" button skips scraping and loads the built-in example property.
+
+Architecture: `src/lib/scraper/` (`apify.ts` runs an actor; `leboncoin.ts` /
+`seloger.ts` map its output) → the server-only route in `src/app/api/scrape/` →
+`scrapeListingClient` in the browser → `applyScrape()` in the store. Add a
+portal by writing a mapper and wiring it in `detectSource` / `scrapeListing`.
+
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
 ## Learn More

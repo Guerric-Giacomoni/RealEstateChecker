@@ -5,7 +5,9 @@ import { useApp } from "@/lib/store";
 import { buyVsRent } from "@/lib/finance";
 import { eur, eurM2, eurMonthSigned, pct, years as fmtYears } from "@/lib/format";
 import { AssumptionsRecap, PropertyCard } from "./AssumptionsPanel";
+import { Landing } from "./Landing";
 import { Onboarding } from "./Onboarding";
+import { UrlSearchBar } from "./UrlSearchBar";
 import { TabBien } from "./tabs/TabBien";
 import { TabRentabilite } from "./tabs/TabRentabilite";
 import { TabAcheterLouer } from "./tabs/TabAcheterLouer";
@@ -24,6 +26,10 @@ const ALL_TABS: { id: TabId; label: string; icon: string }[] = [
 
 export function AppShell() {
   const { onboarded } = useApp();
+  // Paste-a-URL landing runs once before onboarding; "démo" or a successful
+  // scrape flips `started` and hands off to the onboarding wizard.
+  const [started, setStarted] = useState(false);
+  if (!started && !onboarded) return <Landing onReady={() => setStarted(true)} />;
   if (!onboarded) return <Onboarding />;
   return <Dashboard />;
 }
@@ -122,8 +128,7 @@ function Dashboard() {
 /* ================================================================== */
 
 function TopBar() {
-  const { property, restartOnboarding } = useApp();
-  const [url, setUrl] = useState(property.url);
+  const { restartOnboarding } = useApp();
 
   return (
     <header className="border-b border-line bg-white">
@@ -140,28 +145,7 @@ function TopBar() {
           </div>
         </div>
 
-        <form
-          className="flex min-w-[280px] flex-1 items-center gap-2"
-          onSubmit={(e) => e.preventDefault()}
-        >
-          <div className="relative flex-1">
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-faint">
-              🔗
-            </span>
-            <input
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="Collez l'URL d'une annonce (Leboncoin, SeLoger, PAP…)"
-              className="w-full rounded-lg border border-line bg-canvas py-2 pl-9 pr-3 text-[13px] text-ink outline-none transition placeholder:text-faint focus:border-navy-400 focus:bg-white focus:ring-2 focus:ring-navy-100"
-            />
-          </div>
-          <button
-            type="submit"
-            className="rounded-lg bg-navy-700 px-4 py-2 text-[13px] font-semibold text-white transition hover:bg-navy-800"
-          >
-            Analyser
-          </button>
-        </form>
+        <UrlSearchBar variant="bar" />
 
         <div className="flex items-center gap-2">
           <button

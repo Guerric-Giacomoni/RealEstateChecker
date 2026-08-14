@@ -10,7 +10,8 @@ import {
 } from "react";
 import { DEFAULTS, MARKET, PROPERTY } from "./mock";
 import { derive, scoreDeal, stats } from "./finance";
-import type { Assumptions, Profile } from "./types";
+import type { Assumptions, Profile, Property } from "./types";
+import type { ScrapeResult } from "./scraper/types";
 
 type Ctx = {
   a: Assumptions;
@@ -31,7 +32,9 @@ type Ctx = {
   setShowOther: (v: boolean) => void;
 
   market: typeof MARKET;
-  property: typeof PROPERTY;
+  property: Property;
+  /** Replace the analysed property + seed assumptions from a scraped listing. */
+  applyScrape: (result: ScrapeResult) => void;
   comps: {
     salePerM2: ReturnType<typeof stats>;
     salePrices: ReturnType<typeof stats>;
@@ -47,6 +50,7 @@ const AppCtx = createContext<Ctx | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [a, setA] = useState<Assumptions>(DEFAULTS);
+  const [property, setProperty] = useState<Property>(PROPERTY);
   const [profile, setProfileState] = useState<Profile | null>(null);
   const [onboarded, setOnboarded] = useState(false);
   const [showOther, setShowOther] = useState(false);
@@ -58,6 +62,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
   const patch = useCallback((p: Partial<Assumptions>) => setA((prev) => ({ ...prev, ...p })), []);
   const reset = useCallback(() => setA(DEFAULTS), []);
+
+  const applyScrape = useCallback((result: ScrapeResult) => {
+    setProperty(result.property);
+    setA((prev) => ({ ...prev, ...result.assumptions }));
+  }, []);
 
   const finishOnboarding = useCallback((p: Profile, values: Partial<Assumptions>) => {
     setProfileState(p);
@@ -109,7 +118,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     showOther,
     setShowOther,
     market: MARKET,
-    property: PROPERTY,
+    property,
+    applyScrape,
     comps,
     scoring,
   };
