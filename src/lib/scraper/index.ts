@@ -41,7 +41,9 @@ export async function scrapeListing(rawUrl: string): Promise<ScrapeResult> {
   }
 
   if (source === "seloger") {
-    const items = await runApifyActor(SELOGER_ACTOR, { startUrls: [url] });
+    // The actor's `startUrls` uses the requestListSources editor, so Apify's
+    // input validation requires objects ({ url }), not bare strings.
+    const items = await runApifyActor(SELOGER_ACTOR, { startUrls: [{ url }] });
     return mapSelogerItem(firstItem(items), url);
   }
 

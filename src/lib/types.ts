@@ -72,6 +72,13 @@ export type RentComp = {
 
 export type Series = { label: string; value: number }[];
 
+/** Energy characteristics read from the listing's DPE/GES block. */
+export type PropertyEnergy = {
+  condition: string | null; // e.g. "Entretenu"
+  heatingSystem: string | null; // e.g. "Chauffage central"
+  energySource: string | null; // e.g. "Gaz"
+};
+
 export type Property = {
   url: string;
   title: string;
@@ -89,6 +96,9 @@ export type Property = {
   year: string;
   description: string;
   photo: string;
+  /** Ad-declared features only (e.g. "Cave", "Balcon") — used for comparables. */
+  features: string[];
+  energy: PropertyEnergy;
   scrapedOn: string;
 };
 

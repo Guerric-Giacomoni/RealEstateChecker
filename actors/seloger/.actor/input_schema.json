@@ -1,0 +1,57 @@
+{
+    "title": "SeLoger Listing Scraper input",
+    "type": "object",
+    "schemaVersion": 1,
+    "properties": {
+        "startUrls": {
+            "title": "Listing URLs",
+            "type": "array",
+            "description": "SeLoger listing detail pages to scrape, e.g. https://www.seloger.com/annonces/achat/appartement/bayeux-14/268652599.htm",
+            "editor": "requestListSources",
+            "prefill": [
+                {
+                    "url": "https://www.seloger.com/annonces/achat/appartement/bayeux-14/268652599.htm"
+                }
+            ]
+        },
+        "proxyConfiguration": {
+            "title": "Proxy configuration",
+            "type": "object",
+            "description": "SeLoger is protected by DataDome. Residential proxies are strongly recommended — datacenter IPs get challenged within a handful of requests.",
+            "editor": "proxy",
+            "prefill": {
+                "useApifyProxy": true,
+                "apifyProxyGroups": ["RESIDENTIAL"],
+                "apifyProxyCountry": "FR"
+            },
+            "default": {
+                "useApifyProxy": true,
+                "apifyProxyGroups": ["RESIDENTIAL"],
+                "apifyProxyCountry": "FR"
+            }
+        },
+        "maxConcurrency": {
+            "title": "Max concurrency",
+            "type": "integer",
+            "description": "Keep this low. SeLoger flags bursts of parallel requests from the same subnet.",
+            "default": 2,
+            "minimum": 1,
+            "maximum": 20
+        },
+        "maxRequestRetries": {
+            "title": "Max retries per URL",
+            "type": "integer",
+            "description": "Each retry gets a fresh proxy IP and browser fingerprint.",
+            "default": 5,
+            "minimum": 0,
+            "maximum": 20
+        },
+        "headless": {
+            "title": "Run headless",
+            "type": "boolean",
+            "description": "Turn off only when debugging locally.",
+            "default": true
+        }
+    },
+    "required": ["startUrls"]
+}

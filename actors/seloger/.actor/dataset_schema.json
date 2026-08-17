@@ -1,0 +1,42 @@
+{
+    "actorSpecification": 1,
+    "fields": {},
+    "views": {
+        "overview": {
+            "title": "Overview",
+            "transformation": {
+                "fields": [
+                    "id",
+                    "reference",
+                    "title",
+                    "price",
+                    "livingArea",
+                    "rooms",
+                    "bedrooms",
+                    "city",
+                    "zipCode",
+                    "dpe",
+                    "ges",
+                    "permalink"
+                ]
+            },
+            "display": {
+                "component": "table",
+                "properties": {
+                    "id": { "label": "ID" },
+                    "reference": { "label": "Réf." },
+                    "title": { "label": "Titre" },
+                    "price": { "label": "Prix (€)" },
+                    "livingArea": { "label": "Surface (m²)" },
+                    "rooms": { "label": "Pièces" },
+                    "bedrooms": { "label": "Chambres" },
+                    "city": { "label": "Ville" },
+                    "zipCode": { "label": "CP" },
+                    "dpe": { "label": "DPE" },
+                    "ges": { "label": "GES" },
+                    "permalink": { "label": "URL" }
+                }
+            }
+        }
+    }
+}

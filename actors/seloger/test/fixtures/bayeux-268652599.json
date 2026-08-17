@@ -1,0 +1,558 @@
+{
+  "id": "26RWYVPVLFLT",
+  "brand": "seloger",
+  "metadata": {
+    "legacyId": "268652599",
+    "creationDate": "2026-05-10T13:13:00Z",
+    "updateDate": "2026-07-16T00:46:29.407Z",
+    "isNewBuildProject": false
+  },
+  "rawData": {
+    "distributionType": "BUY",
+    "propertyType": "APARTMENT",
+    "propertySubType": "MULTI_STOREY",
+    "propertyTypeLabel": "Appartement",
+    "geoIdHierarchy": [
+      {
+        "id": "AD08FR4602",
+        "typeKey": "AD08"
+      },
+      {
+        "id": "AD06FR14",
+        "typeKey": "AD06"
+      },
+      {
+        "id": "AD03FR2",
+        "typeKey": "AD03"
+      },
+      {
+        "id": "AD04FR14",
+        "typeKey": "AD04"
+      },
+      {
+        "id": "AD02FR1",
+        "typeKey": "AD02"
+      }
+    ],
+    "distributionSubType": {
+      "buy": "RESALE"
+    }
+  },
+  "domains": {
+    "medias": {
+      "images": [
+        {
+          "id": "c27c5c64",
+          "key": "c27c5c64-0",
+          "url": "https://v.seloger.com/s/cdn/x/visuels/0/x/d/l/aaa.jpg",
+          "classification": {
+            "name": "LIVING_ROOM"
+          }
+        },
+        {
+          "id": "56c2821f",
+          "key": "56c2821f-1",
+          "url": "https://v.seloger.com/s/cdn/x/visuels/1/8/r/n/bbb.jpg",
+          "classification": {
+            "name": "LIVING_ROOM"
+          }
+        },
+        {
+          "id": "12d6adeb",
+          "key": "12d6adeb-2",
+          "url": "https://v.seloger.com/s/cdn/x/visuels/2/2/h/1/ccc.jpg",
+          "classification": {
+            "name": "TERRACE"
+          }
+        }
+      ],
+      "floorplans": [
+        {
+          "url": "https://v.seloger.com/s/cdn/x/visuels/plan1.jpg"
+        }
+      ],
+      "videos": [],
+      "virtualTours": [
+        {
+          "url": "https://my.matterport.com/show/?m=KnvLsDNRqB9"
+        }
+      ]
+    }
+  },
+  "legacyTracking": {
+    "site": "SL",
+    "pagename": "detail",
+    "products": [
+      {
+        "client_id": "405327",
+        "client_type": "pro",
+        "distribution_type": "2",
+        "energy_letter": "D",
+        "estate_postalcode": "14400",
+        "estate_type": 9,
+        "id": "268652599",
+        "nb_bedrooms": 2,
+        "nb_rooms": 3,
+        "photos_nb": 13,
+        "price": 231000,
+        "space": 57
+      }
+    ]
+  },
+  "contactSections": {
+    "id": "26RWYVPVLFLT",
+    "legacyId": "268652599",
+    "brand": "seloger",
+    "agencyId": "RC-326236",
+    "static": {
+      "phoneNumbers": [
+        "02 31 10 49 00"
+      ]
+    },
+    "contactCard": {
+      "title": "NORMANDIE PRIVILEGE",
+      "subtitle": "Normandie Privilege",
+      "phoneNumbers": [
+        "02 31 10 49 00"
+      ],
+      "isPrivateOwner": false,
+      "agencyLogo": {
+        "logoUrl": "https://v.seloger.com/s/width/150/logos/0/e/s/e/logo.jpg",
+        "display": true
+      }
+    },
+    "contactForm": {
+      "leadEmail": "ag141264@contact-manager.net",
+      "subjectLabel": "Votre message à Normandie Privilege"
+    },
+    "provider": {
+      "website": "http://normandieprivilege.com/",
+      "agencyLegalInformations": [
+        "SASU RENAUD IMMOBILIER SASU au capital de 1 000 €",
+        "Garantie financière GALIAN pour un montant de 119 970 €",
+        "Siège: 5 RUE DE LA CHAINE, 14400 BAYEUX",
+        "<b>RCS:</b> Bayeux 840989909",
+        "<b>SIRET:</b> 84098990900022"
+      ]
+    }
+  },
+  "tags": {
+    "isExclusive": false,
+    "has3DVisit": true,
+    "hasBrokerageFee": false,
+    "isNew": false
+  },
+  "sections": {
+    "location": {
+      "address": {
+        "country": "FRA",
+        "city": "Bayeux",
+        "zipCode": "14400"
+      },
+      "isAddressPublished": false,
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                -0.6986,
+                49.26568
+              ],
+              [
+                -0.7021,
+                49.26822
+              ],
+              [
+                -0.70465,
+                49.26593
+              ],
+              [
+                -0.71423,
+                49.26623
+              ],
+              [
+                -0.71293,
+                49.27238
+              ],
+              [
+                -0.72587,
+                49.26958
+              ],
+              [
+                -0.72755,
+                49.2747
+              ],
+              [
+                -0.72197,
+                49.29251
+              ],
+              [
+                -0.70941,
+                49.2935
+              ],
+              [
+                -0.69287,
+                49.29155
+              ],
+              [
+                -0.6978,
+                49.28718
+              ],
+              [
+                -0.69742,
+                49.28027
+              ],
+              [
+                -0.69089,
+                49.27716
+              ],
+              [
+                -0.69235,
+                49.27408
+              ],
+              [
+                -0.67646,
+                49.26907
+              ],
+              [
+                -0.6986,
+                49.26568
+              ]
+            ]
+          ]
+        ]
+      }
+    },
+    "description": {
+      "headline": "Un appartement de 3 pièces en duplex et sa cour",
+      "description": "Dans le centre historique de Bayeux, Normandie Privilège vous propose un appartement de caractère de 3 pièces principales et sa cour sans vis-à-vis."
+    },
+    "areaDescription": {
+      "title": "Coeur Centre Ville"
+    },
+    "hardFacts": {
+      "title": "Duplex à vendre",
+      "keyfacts": [
+        "3 pièces",
+        "2 chambres",
+        "57 m²",
+        "2 étages"
+      ],
+      "facts": [
+        {
+          "type": "numberOfRooms",
+          "value": "3 pièces",
+          "splitValue": "3",
+          "label": "pièces"
+        },
+        {
+          "type": "numberOfBedrooms",
+          "value": "2 chambres",
+          "splitValue": "2",
+          "label": "chambres"
+        },
+        {
+          "type": "livingSpace",
+          "value": "57 m²",
+          "splitValue": "57",
+          "label": "m²"
+        },
+        {
+          "type": "numberOfFloors",
+          "value": "2 étages",
+          "splitValue": "2",
+          "label": "étages"
+        }
+      ]
+    },
+    "energy": {
+      "hasScales": true,
+      "features": [
+        {
+          "type": "state",
+          "label": "État",
+          "value": "Entretenu"
+        },
+        {
+          "type": "heatingSystem",
+          "label": "Type de chauffage",
+          "value": "Chauffage central"
+        },
+        {
+          "type": "energySource",
+          "label": "Sources d'énergie",
+          "value": "Gaz"
+        }
+      ],
+      "certificates": [
+        {
+          "key": "46cba548-079b-4c98-869f-bb3614d4f6e3",
+          "features": [
+            {
+              "type": "minMaxEstimation",
+              "label": "Estimation de la facture énergétique",
+              "value": "entre 1250 et 1730 €/an"
+            },
+            {
+              "type": "nameOfCertificate",
+              "label": "Diagnostic réalisé",
+              "value": "Après le 1er juillet 2021"
+            },
+            {
+              "type": "estimationDescription",
+              "label": "estimationDescription",
+              "value": "Montant estimé des dépenses annuelles d'énergie pour un usage standard: entre 1250 et 1730 € par an."
+            }
+          ],
+          "scales": [
+            {
+              "key": "bb371a73-f586-4a23-abe4-fdda04b92122",
+              "name": "Diagnostic de performance énergétique (DPE)",
+              "efficiencyClass": {
+                "index": 3,
+                "rating": "D"
+              },
+              "values": [
+                {
+                  "value": "228 kWh/m².an",
+                  "label": "Consommation (énergie primaire)"
+                },
+                {
+                  "value": "49 kg CO₂/m².an",
+                  "label": "Émissions"
+                }
+              ],
+              "segments": [
+                {
+                  "label": "A",
+                  "value": ""
+                },
+                {
+                  "label": "B",
+                  "value": ""
+                },
+                {
+                  "label": "C",
+                  "value": ""
+                },
+                {
+                  "label": "D",
+                  "value": ""
+                },
+                {
+                  "label": "E",
+                  "value": ""
+                },
+                {
+                  "label": "F",
+                  "value": ""
+                },
+                {
+                  "label": "G",
+                  "value": ""
+                }
+              ]
+            },
+            {
+              "key": "cc471a73-f586-4a23-abe4-fdda04b92133",
+              "name": "Indice d'émission de gaz à effet de serre (GES)",
+              "efficiencyClass": {
+                "index": 3,
+                "rating": "D"
+              },
+              "values": [
+                {
+                  "value": "49 kg CO₂/m².an",
+                  "label": "Émissions"
+                }
+              ],
+              "segments": [
+                {
+                  "label": "A",
+                  "value": ""
+                },
+                {
+                  "label": "B",
+                  "value": ""
+                },
+                {
+                  "label": "C",
+                  "value": ""
+                },
+                {
+                  "label": "D",
+                  "value": ""
+                },
+                {
+                  "label": "E",
+                  "value": ""
+                },
+                {
+                  "label": "F",
+                  "value": ""
+                },
+                {
+                  "label": "G",
+                  "value": ""
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "key": {
+      "keys": [
+        {
+          "label": "Identifiant",
+          "value": "26RWYVPVLFLT"
+        },
+        {
+          "label": "Référence annonce",
+          "value": "3NAR-MB0-TIJ"
+        }
+      ]
+    },
+    "price": {
+      "price": {
+        "value": "231 000 €",
+        "formatted": "231 000 €",
+        "additionalInformation": "4 053 €/m²",
+        "ariaLabel": "231000 €"
+      },
+      "breakdown": {
+        "message": {
+          "value": "Les honoraires sont à la charge du vendeur"
+        }
+      },
+      "components": [
+        {
+          "units": [
+            {
+              "main": {
+                "message": {
+                  "value": "Les honoraires sont à la charge du vendeur"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "coOwnership": {
+      "items": [
+        {
+          "label": "Nombre de lots",
+          "value": "7",
+          "type": "numberOfUnits"
+        }
+      ]
+    },
+    "features": {
+      "preview": [
+        {
+          "icon": "floors",
+          "value": "2 étages"
+        },
+        {
+          "icon": "kitchen",
+          "value": "Cuisine équipée",
+          "enrichment": "ai"
+        },
+        {
+          "icon": "cellar",
+          "value": "Cave"
+        }
+      ],
+      "details": {
+        "categories": [
+          {
+            "title": "Informations générales",
+            "elements": [
+              {
+                "icon": "calm",
+                "value": "Calme"
+              },
+              {
+                "icon": "furnished",
+                "value": "Non meublé"
+              },
+              {
+                "icon": "floors",
+                "value": "2 étages"
+              }
+            ]
+          },
+          {
+            "title": "Intérieur",
+            "elements": [
+              {
+                "icon": "kitchen",
+                "value": "Cuisine équipée",
+                "enrichment": "ai"
+              },
+              {
+                "icon": "cellar",
+                "value": "Cave"
+              },
+              {
+                "icon": "wc",
+                "value": "1 WC"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "gallery": {
+      "images": [
+        {
+          "key": "c27c5c64",
+          "url": "https://v.seloger.com/s/cdn/x/visuels/0/x/d/l/aaa.jpg",
+          "alt": "Duplex à vendre",
+          "classification": {
+            "name": "LIVING_ROOM"
+          }
+        }
+      ],
+      "floorplans": []
+    },
+    "documents": {
+      "display": false,
+      "files": []
+    },
+    "mortgage": {
+      "brand": "seloger",
+      "id": "268652599",
+      "zip": "14400",
+      "city": "Bayeux",
+      "country": "FRA",
+      "subType": "RESALE",
+      "region": "Normandie",
+      "price": 231000,
+      "monthlyAmount": 1174,
+      "formattedMonthlyAmount": "1 174"
+    },
+    "priceComparison": {
+      "data": {
+        "value": 2652,
+        "accuracy": 3,
+        "high": "4 233",
+        "low": "1 397"
+      },
+      "markerPosition": 94,
+      "hasMainPrice": true,
+      "isSale": true,
+      "pricePerSqm": "4 052,63",
+      "marketInsights": {
+        "placeId": "AD08FR4602",
+        "transactionType": "sell",
+        "city": "Bayeux"
+      }
+    },
+    "mainDescription": {
+      "description": "Dans le centre historique de Bayeux, Normandie Privilège vous propose un appartement de caractère."
+    }
+  }
+}

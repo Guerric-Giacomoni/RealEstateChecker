@@ -16,7 +16,7 @@ import { ScrapeError } from "./types";
 export const LEBONCOIN_ACTOR =
   process.env.APIFY_LEBONCOIN_ACTOR || "scrapifier~leboncoin-universal-scraper";
 export const SELOGER_ACTOR =
-  process.env.APIFY_SELOGER_ACTOR || "azzouzana~seloger-mass-products-scraper-by-items-urls";
+  process.env.APIFY_SELOGER_ACTOR || "enheartening_scorecard~seloger-listing-scraper";
 
 /**
  * Run an actor synchronously and return its dataset items.
@@ -64,7 +64,13 @@ export async function runApifyActor(actorId: string, input: unknown): Promise<un
     throw new ScrapeError("Acteur Apify introuvable.", "fetch_failed", 500);
   }
   if (!res.ok) {
-    throw new ScrapeError(`Apify a renvoyé une erreur ${res.status}.`, "fetch_failed");
+    // Apify errors carry a JSON body { error: { type, message } } — surface it
+    // so schema/input failures (400) are actually diagnosable.
+    const detail = await apifyErrorMessage(res);
+    throw new ScrapeError(
+      `Apify a renvoyé une erreur ${res.status}${detail ? ` : ${detail}` : ""}.`,
+      "fetch_failed",
+    );
   }
 
   let items: unknown;
@@ -77,4 +83,14 @@ export async function runApifyActor(actorId: string, input: unknown): Promise<un
     throw new ScrapeError("Réponse Apify inattendue.", "parse_failed");
   }
   return items;
+}
+
+/** Best-effort extraction of Apify's error message from a failed response. */
+async function apifyErrorMessage(res: Response): Promise<string | null> {
+  try {
+    const body = await res.json();
+    return body?.error?.message ?? null;
+  } catch {
+    return null;
+  }
 }

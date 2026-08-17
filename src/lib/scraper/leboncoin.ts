@@ -50,6 +50,8 @@ export function mapLeboncoinItem(raw: unknown, url: string): ScrapeResult {
     year: (year ?? "").toString(),
     description: ad.body ?? "",
     photo: firstImage(ad) ?? "",
+    features: [],
+    energy: { condition: null, heatingSystem: null, energySource: null },
     scrapedOn: new Date().toISOString().slice(0, 10),
   };
 

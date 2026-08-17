@@ -9,14 +9,30 @@ export function PropertyCard() {
   return (
     <Card pad={false} className="overflow-hidden">
       <div className="relative h-[132px] bg-gradient-to-br from-navy-700 via-navy-600 to-navy-800">
-        <div
-          className="absolute inset-0 opacity-[0.13]"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle at 20% 30%, #fff 1px, transparent 1px), radial-gradient(circle at 70% 60%, #fff 1px, transparent 1px)",
-            backgroundSize: "26px 26px",
-          }}
-        />
+        {property.photo ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={property.photo}
+              alt={property.title}
+              className="absolute inset-0 h-full w-full object-cover"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
+            {/* Darken toward the bottom so the white text stays legible on any photo. */}
+            <div className="absolute inset-0 bg-gradient-to-t from-navy-900/85 via-navy-900/30 to-navy-900/10" />
+          </>
+        ) : (
+          <div
+            className="absolute inset-0 opacity-[0.13]"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle at 20% 30%, #fff 1px, transparent 1px), radial-gradient(circle at 70% 60%, #fff 1px, transparent 1px)",
+              backgroundSize: "26px 26px",
+            }}
+          />
+        )}
         <div className="absolute left-3 top-3 rounded-full bg-white/15 px-2.5 py-1 text-[10.5px] font-medium text-white backdrop-blur">
           🛡 Analysé le 5 août 2026
         </div>

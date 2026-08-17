@@ -1,0 +1,226 @@
+{
+	"id": 268652599,
+	"publicId": "26RWYVPVLFLT",
+	"reference": "3NAR-MB0-TIJ",
+	"permalink": "http://127.0.0.1:8099/index.html",
+	"actorInputUrl": "http://127.0.0.1:8099/index.html",
+	"businessUnit": "SL",
+	"brand": "seloger",
+	"title": "Duplex à vendre",
+	"headline": "Un appartement de 3 pièces en duplex et sa cour",
+	"description": "Dans le centre historique de Bayeux, Normandie Privilège vous propose un appartement de caractère de 3 pièces principales et sa cour sans vis-à-vis.",
+	"keyfacts": [
+		"3 pièces",
+		"2 chambres",
+		"57 m²",
+		"2 étages"
+	],
+	"price": 231000,
+	"priceUnit": "€",
+	"squareMeterPrice": 4052.63,
+	"priceBlock": {
+		"price": 231000,
+		"priceUnit": "€",
+		"squareMeterPrice": 4053,
+		"squareMeterPriceUnit": "€ / m²"
+	},
+	"aboutPrice": {
+		"text": "231 000 € Les honoraires sont à la charge du vendeur"
+	},
+	"monthlyMortgageEstimate": 1174,
+	"alur": {
+		"feesPercentage": 0,
+		"flatRateCharges": 0,
+		"idTypeOfFeesAccountant": 2,
+		"idTypeOfRentalFees": 0,
+		"ifAnnualReimbursement": false,
+		"ifFeesArePurchaserResponsability": false,
+		"ifFeesAreSellerResponsability": true,
+		"ifLumpSum": false,
+		"ifProvisionsOnCharges": false,
+		"inventoryPrice": 0,
+		"price": 231000,
+		"priceExcludingFees": 0,
+		"priceSupplement": 0,
+		"renterFees": 0,
+		"rentalPledge": 0,
+		"rentSupplement": 0,
+		"textTemplate": 2,
+		"rentControl": false,
+		"increasedReferenceRent": 0,
+		"feeMessage": "Les honoraires sont à la charge du vendeur"
+	},
+	"zoneSquareMeterPrice": 2652,
+	"minSquareMeterPrice": 1397,
+	"maxSquareMeterPrice": 4233,
+	"squareMeterPriceAccuracy": 3,
+	"marketInsightsPlaceId": "AD08FR4602",
+	"rooms": 3,
+	"bedrooms": 2,
+	"livingArea": 57,
+	"livingAreaUnit": "m²",
+	"landArea": null,
+	"floors": 2,
+	"floor": null,
+	"dpe": "D",
+	"ges": "D",
+	"energyBalance": {
+		"hasScales": true,
+		"dpe": {
+			"rating": "D",
+			"index": 3,
+			"consumption": 228,
+			"consumptionUnit": "kWh/m².an",
+			"consumptionRaw": "228 kWh/m².an",
+			"emission": 49,
+			"emissionUnit": "kg CO2/m².an",
+			"emissionRaw": "49 kg CO₂/m².an",
+			"label": "Diagnostic de performance énergétique (DPE)"
+		},
+		"ges": {
+			"rating": "D",
+			"index": 3,
+			"consumption": null,
+			"consumptionUnit": null,
+			"consumptionRaw": null,
+			"emission": 49,
+			"emissionUnit": "kg CO2/m².an",
+			"emissionRaw": "49 kg CO₂/m².an",
+			"label": "Indice d'émission de gaz à effet de serre (GES)"
+		},
+		"estimatedAnnualEnergyCost": {
+			"min": 1250,
+			"max": 1730,
+			"currency": "EUR",
+			"raw": "entre 1250 et 1730 €/an"
+		},
+		"estimationDescription": "Montant estimé des dépenses annuelles d'énergie pour un usage standard: entre 1250 et 1730 € par an.",
+		"diagnosticDate": "Après le 1er juillet 2021",
+		"condition": "Entretenu",
+		"heatingSystem": "Chauffage central",
+		"energySource": "Gaz"
+	},
+	"city": "Bayeux",
+	"zipCode": "14400",
+	"country": "FRA",
+	"locality": {
+		"district": null,
+		"districtGeoId": "AD08FR4602",
+		"cityGeoId": "AD06FR14",
+		"departmentGeoId": "AD04FR14",
+		"city": "Bayeux",
+		"zipCode": "14400",
+		"departmentCode": "14"
+	},
+	"isAddressPublished": false,
+	"coordinates": {
+		"longitude": -0.70759,
+		"latitude": 49.27891,
+		"accuracy": 2,
+		"source": "district-polygon-centroid"
+	},
+	"condoProperties": 7,
+	"condoAnnualCharges": 0,
+	"features": [
+		{
+			"category": "Informations générales",
+			"icon": "calm",
+			"value": "Calme",
+			"source": "listing"
+		},
+		{
+			"category": "Informations générales",
+			"icon": "furnished",
+			"value": "Non meublé",
+			"source": "listing"
+		},
+		{
+			"category": "Informations générales",
+			"icon": "floors",
+			"value": "2 étages",
+			"source": "listing"
+		},
+		{
+			"category": "Intérieur",
+			"icon": "kitchen",
+			"value": "Cuisine équipée",
+			"source": "ai"
+		},
+		{
+			"category": "Intérieur",
+			"icon": "cellar",
+			"value": "Cave",
+			"source": "listing"
+		},
+		{
+			"category": "Intérieur",
+			"icon": "wc",
+			"value": "1 WC",
+			"source": "listing"
+		}
+	],
+	"photos": [
+		"https://v.seloger.com/s/cdn/x/visuels/0/x/d/l/aaa.jpg",
+		"https://v.seloger.com/s/cdn/x/visuels/1/8/r/n/bbb.jpg",
+		"https://v.seloger.com/s/cdn/x/visuels/2/2/h/1/ccc.jpg"
+	],
+	"photosCount": 3,
+	"itemMainPicture": "https://v.seloger.com/s/cdn/x/visuels/0/x/d/l/aaa.jpg",
+	"floorplans": [
+		"https://v.seloger.com/s/cdn/x/visuels/plan1.jpg"
+	],
+	"virtualTours": [
+		"https://my.matterport.com/show/?m=KnvLsDNRqB9"
+	],
+	"videos": [],
+	"medias": [
+		"https://my.matterport.com/show/?m=KnvLsDNRqB9"
+	],
+	"publisher": {
+		"name": "Normandie Privilege",
+		"displayName": "NORMANDIE PRIVILEGE",
+		"agencyId": "RC-326236",
+		"idRcu": "RC-326236",
+		"phoneNumber": "02 31 10 49 00",
+		"email": "ag141264@contact-manager.net",
+		"isPrivateOwner": false,
+		"logoUrl": "https://v.seloger.com/s/width/150/logos/0/e/s/e/logo.jpg",
+		"website": "http://normandieprivilege.com/",
+		"address": "5 RUE DE LA CHAINE, 14400 BAYEUX",
+		"legalForm": "SASU",
+		"socialReason": "RENAUD IMMOBILIER",
+		"shareCapital": 1000,
+		"financialGuaranteeFund": "GALIAN",
+		"financialGuaranteeAmount": 119970,
+		"rcs": "Bayeux 840989909",
+		"siret": "84098990900022",
+		"professionalCardNumber": null,
+		"legalInformations": [
+			"SASU RENAUD IMMOBILIER SASU au capital de 1 000 €",
+			"Garantie financière GALIAN pour un montant de 119 970 €",
+			"Siège: 5 RUE DE LA CHAINE, 14400 BAYEUX",
+			"RCS: Bayeux 840989909",
+			"SIRET: 84098990900022"
+		]
+	},
+	"isIndividual": false,
+	"isExclusiveness": false,
+	"isNew": false,
+	"has3DVisit": true,
+	"hasBrokerageFee": false,
+	"transactionType": 2,
+	"transactionTypeLetters": "Vente",
+	"realEstat": "Appartement",
+	"propertyType": "APARTMENT",
+	"propertySubType": "MULTI_STOREY",
+	"estateTypeCode": 9,
+	"created": "2026-05-10T13:13:00Z",
+	"lastModified": "2026-07-16T00:46:29.407Z",
+	"scrapedAt": "2026-08-17T14:33:16.088Z",
+	"dailyLife": [],
+	"transportations": [],
+	"priceVariations": [],
+	"schools": [],
+	"comments": [],
+	"is404": false
+}

@@ -1,0 +1,15 @@
+{
+    "actorSpecification": 1,
+    "name": "seloger-listing-scraper",
+    "title": "SeLoger Listing Scraper (with DPE / GES)",
+    "description": "Extracts the full listing record from SeLoger detail pages, including the DPE and GES energy ratings.",
+    "version": "1.0",
+    "meta": {
+        "templateId": "js-crawlee-playwright-chrome"
+    },
+    "input": "./input_schema.json",
+    "dockerfile": "../Dockerfile",
+    "storages": {
+        "dataset": "./dataset_schema.json"
+    }
+}

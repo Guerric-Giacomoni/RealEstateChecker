@@ -1,0 +1,8 @@
+{
+  "name": "immocheck-actors",
+  "private": true,
+  "description": "Dev tooling for the ImmoCheck Apify scrapers. Install here so `npx apify` works from each actor folder without a global install.",
+  "devDependencies": {
+    "apify-cli": "^1.8.0"
+  }
+}

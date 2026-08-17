@@ -2,65 +2,60 @@ import type { Property } from "../types";
 import { ScrapeError, type ScrapeResult } from "./types";
 
 /**
- * Map one dataset item from the SeLoger actor into our Property.
- *
- * The actor's output field names aren't documented, so we probe the common
- * spellings for each field (title/name, price, surface/area, city/zipCode,
- * energyClass/dpe…) and record a warning for anything we couldn't find. Once we
- * see a real payload this can be tightened to the exact keys.
+ * Map one dataset item from our SeLoger actor (seloger-listing-scraper) into the
+ * app's Property. The actor returns a stable, rich shape — see
+ * actors/seloger/sample-output.json — so this is mostly direct field picks.
  */
 export function mapSelogerItem(raw: unknown, url: string): ScrapeResult {
   if (!raw || typeof raw !== "object") {
     throw new ScrapeError("Annonce SeLoger vide ou illisible.", "parse_failed");
   }
-  const item = raw as Record<string, unknown>;
+  const item = raw as SelogerItem;
   const warnings: string[] = [];
+  const loc = item.locality ?? {};
+  const eb = item.energyBalance ?? {};
 
-  const pick = (...keys: string[]): unknown => {
-    for (const k of keys) {
-      const v = deepGet(item, k);
-      if (v !== undefined && v !== null && v !== "") return v;
-    }
-    return undefined;
-  };
-  const need = <T>(value: T | undefined, label: string, fallback: T): T => {
-    if (value === undefined) {
+  const need = <T>(value: T | undefined | null, label: string, fallback: T): T => {
+    if (value === undefined || value === null || value === "") {
       warnings.push(label);
       return fallback;
     }
     return value;
   };
 
-  const price = toNumber(pick("price", "priceValue", "prix", "sellingPrice"));
-  const surface = toNumber(pick("surface", "surfaceArea", "livingArea", "area", "surfaceValue"));
-  const rooms = toNumber(pick("rooms", "roomsCount", "nbRooms", "roomCount", "pieces"));
-  const bedrooms = toNumber(pick("bedrooms", "bedroomsCount", "nbBedrooms", "chambres"));
-  const city = toStr(pick("city", "cityLabel", "town", "ville", "cityName"));
-  const postalCode = toStr(pick("zipCode", "postalCode", "zipcode", "cp"));
-  const dpe = toStr(pick("dpe", "energyClass", "energyRate", "dpeLetter", "energy"));
-  const ges = toStr(pick("ges", "gesClass", "gesRate", "greenhouseGasEmission", "gesLetter"));
-  const type = toStr(pick("propertyType", "estateType", "type", "typeLabel", "propertySubType"));
-  const floor = toStr(pick("floor", "floorNumber", "etage"));
-  const year = toStr(pick("constructionYear", "buildYear", "yearBuilt", "anneeConstruction"));
+  const askingPrice = num(item.price ?? item.priceBlock?.price);
+  const surface = num(item.livingArea);
+  // Keep only features the ad actually declares; drop AI-inferred ones.
+  const features = (item.features ?? [])
+    .filter((f) => f?.source === "listing" && typeof f.value === "string")
+    .map((f) => f.value as string);
+  const energy = {
+    condition: str(eb.condition) ?? null,
+    heatingSystem: str(eb.heatingSystem) ?? null,
+    energySource: str(eb.energySource) ?? null,
+  };
 
   const property: Property = {
-    url: toStr(pick("url", "link")) ?? url,
-    title: need(toStr(pick("title", "name", "titre", "headline")), "titre", "Annonce SeLoger"),
-    address: toStr(pick("address", "addressLabel", "adresse")) ?? "",
-    city: need(city, "ville", ""),
-    postalCode: need(postalCode, "code postal", ""),
-    askingPrice: need(price, "prix", 0),
+    url: str(item.permalink) ?? str(item.actorInputUrl) ?? url,
+    title: need(str(item.title) ?? str(item.headline), "titre", "Annonce SeLoger"),
+    address: str(loc.district) ?? "",
+    city: need(str(item.city ?? loc.city), "ville", ""),
+    postalCode: need(str(item.zipCode ?? loc.zipCode), "code postal", ""),
+    askingPrice: need(askingPrice, "prix", 0),
     surface: need(surface, "surface", 0),
-    rooms: rooms ?? 0,
-    bedrooms: bedrooms ?? 0,
-    type: type ?? "Bien",
-    dpe: (dpe ?? "").toUpperCase() || "—",
-    ges: (ges ?? "").toUpperCase() || "—",
-    floor: floor ?? "",
-    year: year ?? "",
-    description: toStr(pick("description", "body", "text")) ?? "",
-    photo: firstImage(pick("images", "photos", "pictures", "media")) ?? "",
-    scrapedOn: new Date().toISOString().slice(0, 10),
+    rooms: num(item.rooms) ?? 0,
+    bedrooms: num(item.bedrooms) ?? 0,
+    type: str(item.realEstat) ?? "Bien",
+    dpe: (str(item.dpe ?? eb.dpe?.rating) ?? "").toUpperCase() || "—",
+    ges: (str(item.ges ?? eb.ges?.rating) ?? "").toUpperCase() || "—",
+    floor: item.floor != null ? String(item.floor) : "",
+    // Build year is optional on SeLoger (unlike DPE) — often null; that's fine.
+    year: str(item.yearOfConstruction ?? item.energyBalance?.yearOfConstruction) ?? "",
+    description: buildDescription(str(item.description), energy, features, eb.estimatedAnnualEnergyCost),
+    photo: str(item.itemMainPicture) ?? firstString(item.photos) ?? "",
+    features,
+    energy,
+    scrapedOn: (str(item.scrapedAt) ?? new Date().toISOString()).slice(0, 10),
   };
 
   const assumptions: ScrapeResult["assumptions"] = {};
@@ -72,38 +67,92 @@ export function mapSelogerItem(raw: unknown, url: string): ScrapeResult {
 
 /* ------------------------------------------------------------------ */
 
-/** Look up `key` at the top level, else one level down inside nested objects. */
-function deepGet(obj: Record<string, unknown>, key: string): unknown {
-  if (key in obj) return obj[key];
-  for (const v of Object.values(obj)) {
-    if (v && typeof v === "object" && !Array.isArray(v)) {
-      const nested = (v as Record<string, unknown>)[key];
-      if (nested !== undefined) return nested;
-    }
+/** Raw listing description + an appended line of energy/features details. */
+function buildDescription(
+  base: string | undefined,
+  energy: { condition: string | null; heatingSystem: string | null; energySource: string | null },
+  features: string[],
+  cost: EnergyCost | undefined,
+): string {
+  const bits: string[] = [];
+
+  if (energy.heatingSystem) {
+    bits.push(
+      energy.energySource
+        ? `${energy.heatingSystem} au ${energy.energySource.toLowerCase()}`
+        : energy.heatingSystem,
+    );
+  } else if (energy.energySource) {
+    bits.push(`Énergie : ${energy.energySource}`);
   }
-  return undefined;
+  if (energy.condition) bits.push(`état : ${energy.condition.toLowerCase()}`);
+
+  const costText =
+    str(cost?.raw) ??
+    (cost?.min != null && cost?.max != null ? `entre ${cost.min} et ${cost.max} €/an` : null);
+  if (costText) bits.push(`coût énergétique estimé ${costText}`);
+
+  if (features.length) bits.push(`caractéristiques : ${features.join(", ")}`);
+
+  const extra = bits.map((b) => `${capitalize(b)}.`).join(" ");
+  return [base?.trim(), extra].filter(Boolean).join("\n\n");
 }
 
-function firstImage(v: unknown): string | undefined {
-  if (typeof v === "string") return v;
-  if (Array.isArray(v)) {
-    const first = v[0];
-    if (typeof first === "string") return first;
-    if (first && typeof first === "object") {
-      const o = first as Record<string, unknown>;
-      return toStr(o.url ?? o.src ?? o.href);
-    }
-  }
-  return undefined;
+function capitalize(s: string): string {
+  return s ? s[0].toUpperCase() + s.slice(1) : s;
 }
 
-function toStr(v: unknown): string | undefined {
+/* ------------------------------- types ---------------------------------- */
+
+type SelogerFeature = { value?: unknown; source?: string };
+type EnergyCost = { min?: number; max?: number; raw?: string };
+type SelogerItem = {
+  permalink?: string;
+  actorInputUrl?: string;
+  title?: string;
+  headline?: string;
+  description?: string;
+  price?: number;
+  priceBlock?: { price?: number };
+  livingArea?: number;
+  rooms?: number;
+  bedrooms?: number;
+  realEstat?: string;
+  dpe?: string;
+  ges?: string;
+  yearOfConstruction?: number | string | null;
+  floor?: number | string | null;
+  city?: string;
+  zipCode?: string;
+  itemMainPicture?: string;
+  photos?: unknown;
+  scrapedAt?: string;
+  features?: SelogerFeature[];
+  locality?: { district?: string; city?: string; zipCode?: string };
+  energyBalance?: {
+    condition?: string;
+    heatingSystem?: string;
+    energySource?: string;
+    yearOfConstruction?: number | string | null;
+    dpe?: { rating?: string };
+    ges?: { rating?: string };
+    estimatedAnnualEnergyCost?: EnergyCost;
+  };
+};
+
+/* ------------------------------ helpers --------------------------------- */
+
+function firstString(v: unknown): string | undefined {
+  return Array.isArray(v) && typeof v[0] === "string" ? v[0] : undefined;
+}
+
+function str(v: unknown): string | undefined {
   if (typeof v === "string") return v.trim() || undefined;
   if (typeof v === "number" && Number.isFinite(v)) return String(v);
   return undefined;
 }
 
-function toNumber(v: unknown): number | undefined {
+function num(v: unknown): number | undefined {
   if (typeof v === "number" && Number.isFinite(v)) return v;
   if (typeof v === "string") {
     const n = parseFloat(v.replace(/[^\d.,-]/g, "").replace(",", "."));

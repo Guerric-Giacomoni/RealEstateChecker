@@ -1,0 +1,8 @@
+node_modules
+storage
+.git
+.gitignore
+apify_storage
+crawlee_storage
+*.log
+README.md

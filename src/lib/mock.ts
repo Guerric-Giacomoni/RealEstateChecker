@@ -20,6 +20,12 @@ export const PROPERTY: Property = {
   description:
     "Appartement traversant de 65 m² situé à proximité immédiate du tramway et des commerces. Séjour lumineux exposé sud, cuisine séparée, deux chambres, salle de bain à rafraîchir. Double vitrage posé en 2016, chauffage individuel gaz. Copropriété de 32 lots, sans procédure en cours. Travaux de rafraîchissement à prévoir, potentiel locatif intéressant compte tenu du secteur.",
   photo: "",
+  features: ["Double vitrage", "Cave", "Cuisine séparée"],
+  energy: {
+    condition: "À rafraîchir",
+    heatingSystem: "Chauffage individuel",
+    energySource: "Gaz",
+  },
   scrapedOn: "2026-08-05",
 };
 

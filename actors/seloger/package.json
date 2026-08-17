@@ -1,0 +1,20 @@
+{
+    "name": "seloger-scraper",
+    "version": "1.0.0",
+    "type": "module",
+    "description": "Apify actor that scrapes SeLoger listing detail pages (incl. DPE / GES) via Crawlee + Playwright.",
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "dependencies": {
+        "apify": "^3.7.2",
+        "crawlee": "^3.18.1",
+        "playwright": "^1.62.1"
+    },
+    "scripts": {
+        "start": "node src/main.js",
+        "test": "node test/extractor.test.js"
+    },
+    "author": "Guerric",
+    "license": "ISC"
+}
