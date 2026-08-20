@@ -8,10 +8,14 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { DEFAULTS, MARKET, PROPERTY } from "./mock";
+import { COMPARABLES, DEFAULTS, MARKET, PROPERTY } from "./mock";
 import { derive, scoreDeal, stats } from "./finance";
-import type { Assumptions, Profile, Property } from "./types";
-import type { ScrapeResult } from "./scraper/types";
+import { startScrapeClient, pollScrapeClient, ScrapeClientError } from "./scrape-client";
+import type { Assumptions, Comparable, Profile, Property } from "./types";
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const POLL_INTERVAL_MS = 3000;
+const POLL_DEADLINE_MS = 240_000; // give up after ~4 min
 
 type Ctx = {
   a: Assumptions;
@@ -33,8 +37,15 @@ type Ctx = {
 
   market: typeof MARKET;
   property: Property;
-  /** Replace the analysed property + seed assumptions from a scraped listing. */
-  applyScrape: (result: ScrapeResult) => void;
+  /** Currently-listed comparable properties (SeLoger). */
+  comparables: Comparable[];
+  /** True while the comparables search is still running in the background. */
+  comparablesLoading: boolean;
+  /**
+   * Start scraping a listing URL. Resolves once the subject property is ready
+   * (so the UI can advance); comparables keep loading in the background.
+   */
+  startScrape: (url: string) => Promise<void>;
   comps: {
     salePerM2: ReturnType<typeof stats>;
     salePrices: ReturnType<typeof stats>;
@@ -51,6 +62,8 @@ const AppCtx = createContext<Ctx | null>(null);
 export function AppProvider({ children }: { children: ReactNode }) {
   const [a, setA] = useState<Assumptions>(DEFAULTS);
   const [property, setProperty] = useState<Property>(PROPERTY);
+  const [comparables, setComparables] = useState<Comparable[]>(COMPARABLES);
+  const [comparablesLoading, setComparablesLoading] = useState(false);
   const [profile, setProfileState] = useState<Profile | null>(null);
   const [onboarded, setOnboarded] = useState(false);
   const [showOther, setShowOther] = useState(false);
@@ -63,9 +76,77 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const patch = useCallback((p: Partial<Assumptions>) => setA((prev) => ({ ...prev, ...p })), []);
   const reset = useCallback(() => setA(DEFAULTS), []);
 
-  const applyScrape = useCallback((result: ScrapeResult) => {
-    setProperty(result.property);
-    setA((prev) => ({ ...prev, ...result.assumptions }));
+  const startScrape = useCallback((rawUrl: string) => {
+    return new Promise<void>((resolve, reject) => {
+      let subjectApplied = false;
+      let settled = false;
+
+      const applySubject = (p: Property, assumptions: Partial<Assumptions>) => {
+        subjectApplied = true;
+        setProperty(p);
+        setA((prev) => ({ ...prev, ...assumptions }));
+        if (!settled) {
+          settled = true;
+          resolve(); // subject is ready — the UI can advance
+        }
+      };
+      const fail = (e: unknown) => {
+        setComparablesLoading(false);
+        if (!settled) {
+          settled = true;
+          reject(e);
+        }
+      };
+
+      (async () => {
+        setComparables([]); // clear any stale/demo comparables
+        try {
+          const { runId, datasetId, source } = await startScrapeClient(rawUrl);
+          setComparablesLoading(source === "seloger");
+          const deadline = Date.now() + POLL_DEADLINE_MS;
+
+          for (;;) {
+            const poll = await pollScrapeClient(runId, datasetId, source, rawUrl).catch(
+              (e) => {
+                // Tolerate a transient poll hiccup unless we're out of time.
+                if (Date.now() > deadline) throw e;
+                return null;
+              },
+            );
+
+            if (poll) {
+              if (poll.property && !subjectApplied) applySubject(poll.property, poll.assumptions ?? {});
+              if (poll.comparables.length) {
+                setComparables(poll.comparables);
+                setComparablesLoading(false);
+                return; // got the subject + comparables; nothing left to wait for
+              }
+              if (poll.done) {
+                setComparables(poll.comparables);
+                setComparablesLoading(false);
+                if (!subjectApplied) {
+                  throw new ScrapeClientError(
+                    "L'annonce n'a pas pu être récupérée (protégée ou indisponible).",
+                  );
+                }
+                return; // finished with no comparables (thin area)
+              }
+            }
+
+            if (Date.now() > deadline) {
+              setComparablesLoading(false);
+              if (!subjectApplied) {
+                throw new ScrapeClientError("Le scraping a dépassé le délai d'attente. Réessayez.");
+              }
+              return; // subject is shown; give up waiting on comparables
+            }
+            await sleep(POLL_INTERVAL_MS);
+          }
+        } catch (e) {
+          fail(e);
+        }
+      })();
+    });
   }, []);
 
   const finishOnboarding = useCallback((p: Profile, values: Partial<Assumptions>) => {
@@ -119,7 +200,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setShowOther,
     market: MARKET,
     property,
-    applyScrape,
+    comparables,
+    comparablesLoading,
+    startScrape,
     comps,
     scoring,
   };

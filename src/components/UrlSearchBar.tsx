@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { useApp } from "@/lib/store";
-import { scrapeListingClient, ScrapeClientError } from "@/lib/scrape-client";
-import type { ScrapeResult } from "@/lib/scraper/types";
 
 type Variant = "hero" | "bar";
 
@@ -13,10 +11,10 @@ export function UrlSearchBar({
   autoFocus,
 }: {
   variant?: Variant;
-  onSuccess?: (result: ScrapeResult) => void;
+  onSuccess?: () => void;
   autoFocus?: boolean;
 }) {
-  const { applyScrape, property } = useApp();
+  const { startScrape, property } = useApp();
   const [url, setUrl] = useState(variant === "bar" ? property.url : "");
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [error, setError] = useState<string>("");
@@ -26,12 +24,12 @@ export function UrlSearchBar({
     setStatus("loading");
     setError("");
     try {
-      const result = await scrapeListingClient(url.trim());
-      applyScrape(result);
+      // Resolves once the subject property is ready; comparables keep loading.
+      await startScrape(url.trim());
       setStatus("idle");
-      onSuccess?.(result);
+      onSuccess?.();
     } catch (e) {
-      setError((e as ScrapeClientError).message);
+      setError((e as Error).message);
       setStatus("error");
     }
   }

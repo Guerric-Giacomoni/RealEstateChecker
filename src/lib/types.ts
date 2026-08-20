@@ -49,6 +49,18 @@ export type Assumptions = {
   ownerMaintenancePct: number; // %/yr of property value, owner-occupier upkeep
 };
 
+/** A property currently listed for sale, from the SeLoger comparables search. */
+export type Comparable = {
+  id: string;
+  url: string;
+  address: string | null; // "district, city (zip)"
+  price: number;
+  surface: number; // living area, m²
+  pricePerM2: number; // €/m²
+  dpe: string | null;
+  rooms: number | null;
+};
+
 export type SaleComp = {
   id: string;
   date: string;
@@ -99,6 +111,12 @@ export type Property = {
   /** Ad-declared features only (e.g. "Cave", "Balcon") — used for comparables. */
   features: string[];
   energy: PropertyEnergy;
+  /**
+   * SeLoger district geo code (e.g. "AD08FR4602"). Not displayed — used as the
+   * location parameter when building comparable search URLs. Null when the
+   * source doesn't provide it.
+   */
+  districtGeoId: string | null;
   scrapedOn: string;
 };
 

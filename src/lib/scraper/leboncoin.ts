@@ -52,6 +52,7 @@ export function mapLeboncoinItem(raw: unknown, url: string): ScrapeResult {
     photo: firstImage(ad) ?? "",
     features: [],
     energy: { condition: null, heatingSystem: null, energySource: null },
+    districtGeoId: null,
     scrapedOn: new Date().toISOString().slice(0, 10),
   };
 
@@ -60,7 +61,7 @@ export function mapLeboncoinItem(raw: unknown, url: string): ScrapeResult {
   if (property.askingPrice > 0) assumptions.purchasePrice = property.askingPrice;
   if (property.surface > 0) assumptions.surface = property.surface;
 
-  return { source: "leboncoin", property, assumptions, warnings };
+  return { source: "leboncoin", property, assumptions, comparables: [], warnings };
 }
 
 /* ------------------------------------------------------------------ */

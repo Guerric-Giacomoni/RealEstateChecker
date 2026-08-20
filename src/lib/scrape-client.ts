@@ -1,6 +1,6 @@
-import type { ScrapeResult } from "./scraper/types";
+import type { ScrapePoll, ScrapeStart } from "./scraper/types";
 
-/** Thrown by the client helper; `message` is safe to show to the user. */
+/** Thrown by the client helpers; `message` is safe to show to the user. */
 export class ScrapeClientError extends Error {
   constructor(message: string, readonly code?: string) {
     super(message);
@@ -8,22 +8,35 @@ export class ScrapeClientError extends Error {
   }
 }
 
-/** Call POST /api/scrape from the browser to scrape a listing URL. */
-export async function scrapeListingClient(url: string): Promise<ScrapeResult> {
+async function post<T>(path: string, body: unknown): Promise<T> {
   let res: Response;
   try {
-    res = await fetch("/api/scrape", {
+    res = await fetch(path, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url }),
+      body: JSON.stringify(body),
     });
   } catch {
     throw new ScrapeClientError("Impossible de contacter le serveur. Vérifiez votre connexion.");
   }
-
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     throw new ScrapeClientError(data.error ?? "Échec de l'analyse de l'annonce.", data.code);
   }
-  return data as ScrapeResult;
+  return data as T;
+}
+
+/** Start an async Apify run for a listing URL. */
+export function startScrapeClient(url: string): Promise<ScrapeStart> {
+  return post<ScrapeStart>("/api/scrape/start", { url });
+}
+
+/** Poll a running scrape for its current progress. */
+export function pollScrapeClient(
+  runId: string,
+  datasetId: string,
+  source: string,
+  url: string,
+): Promise<ScrapePoll> {
+  return post<ScrapePoll>("/api/scrape/poll", { runId, datasetId, source, url });
 }

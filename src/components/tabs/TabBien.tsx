@@ -6,7 +6,7 @@ import { Badge, Card, CardTitle, Insight, Row, Table, Td, pctWidth } from "../ui
 import { ScatterStrip } from "../charts";
 
 export function TabBien() {
-  const { a, d, property, market, comps } = useApp();
+  const { a, d, property, market, comps, comparables, comparablesLoading } = useApp();
 
   const sorted = [...market.saleComps].sort((x, y) => x.distance - y.distance);
   const perM2 = market.saleComps.map((c) => c.price / c.surface);
@@ -216,6 +216,51 @@ export function TabBien() {
             );
           })}
         </Table>
+      </Card>
+
+      {/* ---------------- Ventes en cours ---------------- */}
+      <Card>
+        <CardTitle hint="Annonces comparables actuellement en vente (SeLoger)">
+          Ventes en cours
+        </CardTitle>
+
+        {comparablesLoading ? (
+          <div className="flex items-center gap-2.5 py-4 text-[13px] text-muted">
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-navy-200 border-t-navy-600" />
+            Recherche des annonces comparables en cours…
+          </div>
+        ) : comparables.length === 0 ? (
+          <p className="text-[13px] text-muted">
+            Aucune annonce comparable actuellement en vente pour ce bien.
+          </p>
+        ) : (
+          <Table
+            head={["Adresse", "Prix", "Surface", "€/m²", "DPE", ""]}
+            align={["left", "right", "right", "right", "left", "right"]}
+          >
+            {comparables.map((c) => (
+              <tr key={c.id} className="transition hover:bg-slate-50/70">
+                <Td className="max-w-[200px] truncate text-muted">{c.address ?? "—"}</Td>
+                <Td right strong>{eur(c.price)}</Td>
+                <Td right>{c.surface} m²</Td>
+                <Td right className={c.pricePerM2 > d.pricePerM2 ? "!text-pos" : "!text-bad"}>
+                  {int(c.pricePerM2)} €
+                </Td>
+                <Td>{c.dpe ? <Badge tone="neutral">{c.dpe}</Badge> : <span className="text-faint">—</span>}</Td>
+                <Td right>
+                  <a
+                    href={c.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-medium text-navy-600 hover:underline"
+                  >
+                    Voir ↗
+                  </a>
+                </Td>
+              </tr>
+            ))}
+          </Table>
+        )}
       </Card>
 
     </div>

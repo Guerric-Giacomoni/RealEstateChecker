@@ -1,4 +1,4 @@
-import type { Assumptions, MarketData, Property } from "./types";
+import type { Assumptions, Comparable, MarketData, Property } from "./types";
 
 /* Dummy data — stands in for the scraping + DVF + INSEE + rental APIs. */
 
@@ -26,8 +26,18 @@ export const PROPERTY: Property = {
     heatingSystem: "Chauffage individuel",
     energySource: "Gaz",
   },
+  districtGeoId: null,
   scrapedOn: "2026-08-05",
 };
+
+/** Stand-in "Ventes en cours" — real ones come from the SeLoger comparables run. */
+export const COMPARABLES: Comparable[] = [
+  { id: "c1", url: "https://www.seloger.com/annonces/achat/appartement/le-mans-72/000001.htm", address: "Jacobins, Le Mans (72000)", price: 88000, surface: 62, pricePerM2: 1419, dpe: "E", rooms: 3 },
+  { id: "c2", url: "https://www.seloger.com/annonces/achat/appartement/le-mans-72/000002.htm", address: "Centre-ville, Le Mans (72000)", price: 99500, surface: 68, pricePerM2: 1463, dpe: "D", rooms: 3 },
+  { id: "c3", url: "https://www.seloger.com/annonces/achat/appartement/le-mans-72/000003.htm", address: "Gare, Le Mans (72000)", price: 76000, surface: 54, pricePerM2: 1407, dpe: "F", rooms: 2 },
+  { id: "c4", url: "https://www.seloger.com/annonces/achat/appartement/le-mans-72/000004.htm", address: "Bollée, Le Mans (72000)", price: 92000, surface: 66, pricePerM2: 1394, dpe: "E", rooms: 3 },
+  { id: "c5", url: "https://www.seloger.com/annonces/achat/appartement/le-mans-72/000005.htm", address: "Sablons, Le Mans (72000)", price: 104000, surface: 71, pricePerM2: 1465, dpe: "C", rooms: 4 },
+];
 
 export const DEFAULTS: Assumptions = {
   // Le bien

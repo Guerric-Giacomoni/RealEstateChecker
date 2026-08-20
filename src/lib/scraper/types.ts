@@ -1,4 +1,4 @@
-import type { Assumptions, Property } from "../types";
+import type { Assumptions, Comparable, Property } from "../types";
 
 /** Listing portals we know how to parse. */
 export type ListingSource = "leboncoin" | "seloger" | "bienici" | "pap" | "unknown";
@@ -13,7 +13,29 @@ export type ScrapeResult = {
   property: Property;
   /** Only the fields the listing actually gave us — merged over DEFAULTS. */
   assumptions: Partial<Assumptions>;
+  /** Currently-listed comparable properties (SeLoger only; empty otherwise). */
+  comparables: Comparable[];
   /** Fields we could not find, surfaced so the UI can nudge the user to fill them. */
+  warnings: string[];
+};
+
+/** Returned by /api/scrape/start — identifies the async Apify run to poll. */
+export type ScrapeStart = {
+  runId: string;
+  datasetId: string;
+  source: ListingSource;
+};
+
+/**
+ * Returned by /api/scrape/poll — a progressive snapshot of the run. `property`
+ * appears once the subject has been scraped; `comparables` fill in later.
+ */
+export type ScrapePoll = {
+  status: string;
+  done: boolean;
+  property?: Property;
+  assumptions?: Partial<Assumptions>;
+  comparables: Comparable[];
   warnings: string[];
 };
 

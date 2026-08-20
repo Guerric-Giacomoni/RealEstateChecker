@@ -1,10 +1,17 @@
-import { LEBONCOIN_ACTOR, SELOGER_ACTOR, runApifyActor } from "./apify";
+import {
+  LEBONCOIN_ACTOR,
+  SELOGER_ACTOR,
+  getApifyDatasetItems,
+  getApifyRunStatus,
+  isTerminalStatus,
+  startApifyRun,
+} from "./apify";
 import { mapLeboncoinItem } from "./leboncoin";
-import { mapSelogerItem } from "./seloger";
-import { ScrapeError, type ListingSource, type ScrapeResult } from "./types";
+import { mapSelogerDataset } from "./seloger";
+import { ScrapeError, type ListingSource, type ScrapePoll, type ScrapeStart } from "./types";
 
 export { ScrapeError };
-export type { ScrapeResult, ListingSource };
+export type { ListingSource, ScrapePoll, ScrapeStart };
 
 /** Identify the portal from a pasted URL. */
 export function detectSource(rawUrl: string): ListingSource {
@@ -21,13 +28,21 @@ export function detectSource(rawUrl: string): ListingSource {
   return "unknown";
 }
 
-/** Fetch (via Apify) + map a listing URL into the app's Property/Assumptions shape. */
-export async function scrapeListing(rawUrl: string): Promise<ScrapeResult> {
+/** Start the Apify run for a listing URL (async) — the client then polls it. */
+export async function startScrapeRun(rawUrl: string): Promise<ScrapeStart> {
   const url = rawUrl.trim();
   const source = detectSource(url);
 
+  if (source === "seloger") {
+    // `comparablesFor` scrapes the listing AND its comparables in one run
+    // (subject record first, then comparable records). requestListSources →
+    // objects, not strings, so Apify's input validation passes.
+    const run = await startApifyRun(SELOGER_ACTOR, { comparablesFor: [{ url }] });
+    return { ...run, source };
+  }
+
   if (source === "leboncoin") {
-    const items = await runApifyActor(LEBONCOIN_ACTOR, {
+    const run = await startApifyRun(LEBONCOIN_ACTOR, {
       urls_list: [url],
       max_pages: 1,
       limit_per_page: 1,
@@ -37,14 +52,7 @@ export async function scrapeListing(rawUrl: string): Promise<ScrapeResult> {
         apifyProxyCountry: "FR",
       },
     });
-    return mapLeboncoinItem(firstItem(items), url);
-  }
-
-  if (source === "seloger") {
-    // The actor's `startUrls` uses the requestListSources editor, so Apify's
-    // input validation requires objects ({ url }), not bare strings.
-    const items = await runApifyActor(SELOGER_ACTOR, { startUrls: [{ url }] });
-    return mapSelogerItem(firstItem(items), url);
+    return { ...run, source };
   }
 
   if (source === "unknown") {
@@ -61,13 +69,35 @@ export async function scrapeListing(rawUrl: string): Promise<ScrapeResult> {
   );
 }
 
-function firstItem(items: unknown[]): unknown {
-  if (items.length === 0) {
-    throw new ScrapeError(
-      "Aucune donnée renvoyée pour cette annonce (lien expiré ou introuvable ?).",
-      "not_found",
-      404,
-    );
+/**
+ * Snapshot a running scrape: run status + whatever it has pushed so far, mapped
+ * into a progressive result. `property` is present once the subject exists;
+ * `comparables` fill in near the end.
+ */
+export async function pollScrapeRun(
+  runId: string,
+  datasetId: string,
+  source: ListingSource,
+  url: string,
+): Promise<ScrapePoll> {
+  const [status, items] = await Promise.all([
+    getApifyRunStatus(runId),
+    getApifyDatasetItems(datasetId),
+  ]);
+  const poll: ScrapePoll = { status, done: isTerminalStatus(status), comparables: [], warnings: [] };
+
+  if (items.length) {
+    try {
+      const mapped =
+        source === "seloger" ? mapSelogerDataset(items, url) : mapLeboncoinItem(items[0], url);
+      poll.property = mapped.property;
+      poll.assumptions = mapped.assumptions;
+      poll.comparables = mapped.comparables;
+      poll.warnings = mapped.warnings;
+    } catch {
+      // Subject not scraped yet (early poll) — leave property undefined and let
+      // the client keep polling.
+    }
   }
-  return items[0];
+  return poll;
 }

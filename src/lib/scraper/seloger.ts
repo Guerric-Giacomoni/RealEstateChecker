@@ -1,4 +1,4 @@
-import type { Property } from "../types";
+import type { Comparable, Property } from "../types";
 import { ScrapeError, type ScrapeResult } from "./types";
 
 /**
@@ -55,6 +55,8 @@ export function mapSelogerItem(raw: unknown, url: string): ScrapeResult {
     photo: str(item.itemMainPicture) ?? firstString(item.photos) ?? "",
     features,
     energy,
+    // Geo code for comparable search URLs; marketInsightsPlaceId mirrors it.
+    districtGeoId: str(loc.districtGeoId ?? item.marketInsightsPlaceId) ?? null,
     scrapedOn: (str(item.scrapedAt) ?? new Date().toISOString()).slice(0, 10),
   };
 
@@ -62,7 +64,65 @@ export function mapSelogerItem(raw: unknown, url: string): ScrapeResult {
   if (property.askingPrice > 0) assumptions.purchasePrice = property.askingPrice;
   if (property.surface > 0) assumptions.surface = property.surface;
 
-  return { source: "seloger", property, assumptions, warnings };
+  return { source: "seloger", property, assumptions, comparables: [], warnings };
+}
+
+/**
+ * Map the full dataset returned by the actor's `comparablesFor` mode: one
+ * `subject` record + up to N `comparable` records (+ a summary we ignore here).
+ */
+export function mapSelogerDataset(items: unknown[], url: string): ScrapeResult {
+  const records = items.filter(
+    (r): r is Record<string, unknown> => !!r && typeof r === "object",
+  );
+  const subject =
+    records.find((r) => r.recordType === "subject") ??
+    records.find((r) => r.recordType === "listing") ??
+    records.find(
+      (r) =>
+        !["comparable", "comparablesSummary", "error"].includes(r.recordType as string) &&
+        r.is404 !== true,
+    );
+  if (!subject) {
+    throw new ScrapeError(
+      "Aucune donnée renvoyée pour cette annonce (lien expiré ou introuvable ?).",
+      "not_found",
+      404,
+    );
+  }
+  const base = mapSelogerItem(subject, url);
+  const comparables = records
+    .filter((r) => r.recordType === "comparable")
+    .map(mapComparable)
+    .filter((c): c is Comparable => c !== null);
+  return { ...base, comparables };
+}
+
+/** One `comparable` record → the flat shape the "Ventes en cours" table renders. */
+function mapComparable(raw: Record<string, unknown>): Comparable | null {
+  const url = str(raw.url);
+  const price = num(raw.price);
+  if (!url || price === undefined) return null;
+  const surface = num(raw.livingArea) ?? 0;
+  // The actor composes `address` ("district, city (zip)"); compose a fallback
+  // from the parts if an older build didn't send it.
+  const address =
+    str(raw.address) ??
+    (() => {
+      const line = [str(raw.district), str(raw.city)].filter(Boolean).join(", ");
+      const zip = str(raw.zipCode);
+      return line ? (zip ? `${line} (${zip})` : line) : (zip ?? null);
+    })();
+  return {
+    id: str(raw.publicId) ?? str(raw.id) ?? url,
+    url,
+    address,
+    price,
+    surface,
+    pricePerM2: num(raw.squareMeterPrice) ?? (surface ? Math.round(price / surface) : 0),
+    dpe: (str(raw.dpe) ?? "").toUpperCase() || null,
+    rooms: num(raw.rooms) ?? null,
+  };
 }
 
 /* ------------------------------------------------------------------ */
@@ -127,8 +187,9 @@ type SelogerItem = {
   itemMainPicture?: string;
   photos?: unknown;
   scrapedAt?: string;
+  marketInsightsPlaceId?: string;
   features?: SelogerFeature[];
-  locality?: { district?: string; city?: string; zipCode?: string };
+  locality?: { district?: string; districtGeoId?: string; city?: string; zipCode?: string };
   energyBalance?: {
     condition?: string;
     heatingSystem?: string;
