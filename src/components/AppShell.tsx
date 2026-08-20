@@ -7,6 +7,7 @@ import { eur, eurM2, eurMonthSigned, pct, years as fmtYears } from "@/lib/format
 import { AssumptionsRecap, PropertyCard } from "./AssumptionsPanel";
 import { Landing } from "./Landing";
 import { Onboarding } from "./Onboarding";
+import { PartnersSection } from "./PartnersSection";
 import { UrlSearchBar } from "./UrlSearchBar";
 import { TabBien } from "./tabs/TabBien";
 import { TabRentabilite } from "./tabs/TabRentabilite";
@@ -112,6 +113,8 @@ function Dashboard() {
             {tab === "acheter" && <TabAcheterLouer />}
             {tab === "marche" && <TabMarche />}
             {tab === "hypotheses" && <TabHypotheses />}
+
+            <PartnersSection />
           </div>
         </div>
 
