@@ -72,11 +72,17 @@ export function buildComparablesSearchUrl(subject, criteria = {}) {
 
     const price = toNumber(subject?.price);
     const surface = toNumber(subject?.livingArea);
-    const placeId = pick(subject, ['locality', 'districtGeoId']);
+    // Use SeLoger's own comparison area (marketInsights.placeId): it resolves to
+    // the neighbourhood in dense cities (NBH…) and the commune elsewhere (AD08…).
+    // districtGeoId alone is AD08 = the whole commune, which in Paris means all
+    // ~20k flats in the city — a meaningless comparables set. Fall back to it
+    // only when the market place id is absent.
+    const placeId =
+        pick(subject, ['marketInsightsPlaceId']) ?? pick(subject, ['locality', 'districtGeoId']);
     const estateType = toEstateType(pick(subject, ['propertyType']));
 
     const missing = [];
-    if (!placeId) missing.push('districtGeoId');
+    if (!placeId) missing.push('placeId');
     if (!estateType) missing.push('estateTypes');
     if (!price) missing.push('price');
     if (!surface) missing.push('livingArea');

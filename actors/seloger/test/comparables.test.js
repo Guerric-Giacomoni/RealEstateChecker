@@ -70,11 +70,25 @@ check('tolerances are configurable', () => {
     assert.equal(p.get('priceMin'), '219000');
     assert.equal(p.get('spaceMax'), '63');
 });
-check('refuses to build a nationwide search when district is unknown', () => {
-    const noDistrict = { ...subject, locality: { ...subject.locality, districtGeoId: null } };
-    const out = buildComparablesSearchUrl(noDistrict);
+check('refuses to build a nationwide search when the comparison zone is unknown', () => {
+    const noPlace = {
+        ...subject,
+        marketInsightsPlaceId: null,
+        locality: { ...subject.locality, districtGeoId: null },
+    };
+    const out = buildComparablesSearchUrl(noPlace);
     assert.equal(out.url, null);
-    assert.ok(out.missing.includes('districtGeoId'));
+    assert.ok(out.missing.includes('placeId'));
+});
+check('prefers marketInsights.placeId (neighbourhood) over the AD08 commune', () => {
+    // Paris regression: AD08 is the whole city (~20k flats); NBH2 is the quartier.
+    const paris = {
+        ...subject,
+        marketInsightsPlaceId: 'NBH2FR41',
+        locality: { ...subject.locality, districtGeoId: 'AD08FR31096' },
+    };
+    const p = new URL(buildComparablesSearchUrl(paris).url).searchParams;
+    assert.equal(p.get('locations'), 'NBH2FR41');
 });
 check('estate type fallback for unknown types', () => {
     assert.equal(toEstateType('HOUSE'), 'House');

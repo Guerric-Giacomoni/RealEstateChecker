@@ -55,8 +55,10 @@ export function mapSelogerItem(raw: unknown, url: string): ScrapeResult {
     photo: str(item.itemMainPicture) ?? firstString(item.photos) ?? "",
     features,
     energy,
-    // Geo code for comparable search URLs; marketInsightsPlaceId mirrors it.
-    districtGeoId: str(loc.districtGeoId ?? item.marketInsightsPlaceId) ?? null,
+    // SeLoger's comparison zone for building comparable searches. Prefer
+    // marketInsightsPlaceId (neighbourhood in dense cities, commune elsewhere)
+    // over districtGeoId (AD08 = whole commune → all of Paris).
+    districtGeoId: str(item.marketInsightsPlaceId ?? loc.districtGeoId) ?? null,
     scrapedOn: (str(item.scrapedAt) ?? new Date().toISOString()).slice(0, 10),
   };
 
