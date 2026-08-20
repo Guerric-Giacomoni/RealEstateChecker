@@ -307,6 +307,9 @@ export function mapClassified(classified, requestUrl = null) {
         ges: energy.ges,
         energyBalance: energy.energyBalance,
 
+        /* --- building ------------------------------------------------------- */
+        yearOfConstruction: energy.yearOfConstruction,
+
         /* --- location ----------------------------------------------------- */
         city: address.city ?? null,
         zipCode: address.zipCode ?? null,

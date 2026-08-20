@@ -1,0 +1,749 @@
+{
+ "data": {
+  "classified-serp-init-data": {
+   "pageProps": {
+    "searchModel": {
+     "locations": [
+      {
+       "type": "place_id",
+       "placeId": "AD08FR4602"
+      }
+     ],
+     "distributionTypes": [
+      "Buy"
+     ],
+     "estateTypes": [
+      "Apartment"
+     ],
+     "priceMin": 196000,
+     "priceMax": 266000,
+     "method": "form"
+    },
+    "page": 1,
+    "order": "Default",
+    "totalCount": 32,
+    "classifieds": [
+     "26RWYVPVLFLT",
+     "26U2BBCHZNQ3",
+     "26AAAAAAAAA1",
+     "26AAAAAAAAA2",
+     "26AAAAAAAAA3",
+     "26AAAAAAAAA4",
+     "26AAAAAAAAA5"
+    ],
+    "classifiedsData": {
+     "26RWYVPVLFLT": {
+      "id": "26RWYVPVLFLT",
+      "status": "Published",
+      "metadata": {
+       "id": "26RWYVPVLFLT",
+       "legacyId": "268652599",
+       "creationDate": "2026-08-09T02:37:00Z",
+       "updateDate": "2026-08-09T02:41:18.156Z"
+      },
+      "location": {
+       "address": {
+        "country": "FRA",
+        "city": "Bayeux",
+        "zipCode": "14400"
+       },
+       "isAddressPublished": false
+      },
+      "hardFacts": {
+       "title": "Duplex à vendre",
+       "keyfacts": [
+        "3 pièces",
+        "2 chambres",
+        "57 m²"
+       ],
+       "facts": [
+        {
+         "type": "numberOfRooms",
+         "value": "3 pièces",
+         "splitValue": "3",
+         "label": "pièces"
+        },
+        {
+         "type": "numberOfBedrooms",
+         "value": "2 chambres",
+         "splitValue": "2",
+         "label": "chambres"
+        },
+        {
+         "type": "livingSpace",
+         "value": "57 m²",
+         "splitValue": "57",
+         "label": "m²"
+        }
+       ],
+       "price": {
+        "value": "231 000 €",
+        "formatted": "231 000 €",
+        "additionalInformation": "4053 €/m²",
+        "financialLink": {
+         "href": "https://www.seloger.com/financement?x=1",
+         "label": "Demander un financement"
+        }
+       }
+      },
+      "energyClass": "D",
+      "type": "PROFESSIONAL",
+      "cardProvider": {
+       "name": "Agence Test"
+      },
+      "rawData": {
+       "distributionType": "BUY",
+       "propertyType": "APARTMENT",
+       "geoIdHierarchy": [
+        {
+         "id": "AD08FR4602",
+         "typeKey": "AD08"
+        },
+        {
+         "id": "AD06FR14",
+         "typeKey": "AD06"
+        },
+        {
+         "id": "AD03FR2",
+         "typeKey": "AD03"
+        },
+        {
+         "id": "AD04FR14",
+         "typeKey": "AD04"
+        },
+        {
+         "id": "AD02FR1",
+         "typeKey": "AD02"
+        }
+       ],
+       "price": 231000,
+       "surface": {
+        "main": 57
+       },
+       "nbroom": 3,
+       "nbbedroom": 2,
+       "propertyTypeLabel": "Appartement"
+      },
+      "tags": {
+       "isExclusive": false,
+       "has3DVisit": false,
+       "hasBrokerageFee": false,
+       "isNew": false
+      },
+      "url": "https://www.seloger.com/annonce/achat/normandie/calvados-14/bayeux-14400/26RWYVPVLFLT"
+     },
+     "26U2BBCHZNQ3": {
+      "id": "26U2BBCHZNQ3",
+      "status": "Published",
+      "metadata": {
+       "id": "26U2BBCHZNQ3",
+       "legacyId": "276953959",
+       "creationDate": "2026-08-09T02:37:00Z",
+       "updateDate": "2026-08-09T02:41:18.156Z"
+      },
+      "location": {
+       "address": {
+        "country": "FRA",
+        "city": "Bayeux",
+        "zipCode": "14400"
+       },
+       "isAddressPublished": false
+      },
+      "hardFacts": {
+       "title": "Maison à vendre",
+       "keyfacts": [
+        "5 pièces",
+        "3 chambres",
+        "116,49 m²",
+        "509 m² de terrain"
+       ],
+       "facts": [
+        {
+         "type": "numberOfRooms",
+         "value": "5 pièces",
+         "splitValue": "5",
+         "label": "pièces"
+        },
+        {
+         "type": "numberOfBedrooms",
+         "value": "3 chambres",
+         "splitValue": "3",
+         "label": "chambres"
+        },
+        {
+         "type": "livingSpace",
+         "value": "116,49 m²",
+         "splitValue": "116,49",
+         "label": "m²"
+        },
+        {
+         "type": "plotSpace",
+         "value": "509 m² de terrain",
+         "splitValue": "509",
+         "label": "m² de terrain"
+        }
+       ],
+       "price": {
+        "value": "305 000 €",
+        "formatted": "305 000 €",
+        "additionalInformation": "2618 €/m²",
+        "financialLink": {
+         "href": "https://www.seloger.com/financement?x=1",
+         "label": "Demander un financement"
+        }
+       }
+      },
+      "energyClass": "D",
+      "type": "PROFESSIONAL",
+      "cardProvider": {
+       "name": "Agence Test"
+      },
+      "rawData": {
+       "distributionType": "BUY",
+       "propertyType": "HOUSE",
+       "geoIdHierarchy": [
+        {
+         "id": "AD08FR4602",
+         "typeKey": "AD08"
+        },
+        {
+         "id": "AD06FR14",
+         "typeKey": "AD06"
+        },
+        {
+         "id": "AD03FR2",
+         "typeKey": "AD03"
+        },
+        {
+         "id": "AD04FR14",
+         "typeKey": "AD04"
+        },
+        {
+         "id": "AD02FR1",
+         "typeKey": "AD02"
+        }
+       ],
+       "price": 305000,
+       "surface": {
+        "main": 116.49,
+        "plot": 509
+       },
+       "nbroom": 5,
+       "nbbedroom": 3,
+       "propertyTypeLabel": "Maison"
+      },
+      "tags": {
+       "isExclusive": true,
+       "has3DVisit": false,
+       "hasBrokerageFee": false,
+       "isNew": false
+      },
+      "url": "https://www.seloger.com/annonce/achat/normandie/calvados-14/bayeux-14400/26U2BBCHZNQ3"
+     },
+     "26AAAAAAAAA1": {
+      "id": "26AAAAAAAAA1",
+      "status": "Published",
+      "metadata": {
+       "id": "26AAAAAAAAA1",
+       "legacyId": "270000001",
+       "creationDate": "2026-08-09T02:37:00Z",
+       "updateDate": "2026-08-09T02:41:18.156Z"
+      },
+      "location": {
+       "address": {
+        "country": "FRA",
+        "city": "Bayeux",
+        "zipCode": "14400"
+       },
+       "isAddressPublished": false
+      },
+      "hardFacts": {
+       "title": "Appartement à vendre",
+       "keyfacts": [
+        "3 pièces",
+        "2 chambres",
+        "55 m²"
+       ],
+       "facts": [
+        {
+         "type": "numberOfRooms",
+         "value": "3 pièces",
+         "splitValue": "3",
+         "label": "pièces"
+        },
+        {
+         "type": "numberOfBedrooms",
+         "value": "2 chambres",
+         "splitValue": "2",
+         "label": "chambres"
+        },
+        {
+         "type": "livingSpace",
+         "value": "55 m²",
+         "splitValue": "55",
+         "label": "m²"
+        }
+       ],
+       "price": {
+        "value": "225 000 €",
+        "formatted": "225 000 €",
+        "additionalInformation": "4091 €/m²",
+        "financialLink": {
+         "href": "https://www.seloger.com/financement?x=1",
+         "label": "Demander un financement"
+        }
+       }
+      },
+      "energyClass": "C",
+      "type": "PROFESSIONAL",
+      "cardProvider": {
+       "name": "Agence Test"
+      },
+      "rawData": {
+       "distributionType": "BUY",
+       "propertyType": "APARTMENT",
+       "geoIdHierarchy": [
+        {
+         "id": "AD08FR4602",
+         "typeKey": "AD08"
+        },
+        {
+         "id": "AD06FR14",
+         "typeKey": "AD06"
+        },
+        {
+         "id": "AD03FR2",
+         "typeKey": "AD03"
+        },
+        {
+         "id": "AD04FR14",
+         "typeKey": "AD04"
+        },
+        {
+         "id": "AD02FR1",
+         "typeKey": "AD02"
+        }
+       ],
+       "price": 225000,
+       "surface": {
+        "main": 55
+       },
+       "nbroom": 3,
+       "nbbedroom": 2,
+       "propertyTypeLabel": "Appartement"
+      },
+      "tags": {
+       "isExclusive": false,
+       "has3DVisit": false,
+       "hasBrokerageFee": false,
+       "isNew": false
+      },
+      "url": "https://www.seloger.com/annonce/achat/normandie/calvados-14/bayeux-14400/26AAAAAAAAA1"
+     },
+     "26AAAAAAAAA2": {
+      "id": "26AAAAAAAAA2",
+      "status": "Published",
+      "metadata": {
+       "id": "26AAAAAAAAA2",
+       "legacyId": "270000002",
+       "creationDate": "2026-08-09T02:37:00Z",
+       "updateDate": "2026-08-09T02:41:18.156Z"
+      },
+      "location": {
+       "address": {
+        "country": "FRA",
+        "city": "Bayeux",
+        "zipCode": "14400"
+       },
+       "isAddressPublished": false
+      },
+      "hardFacts": {
+       "title": "Appartement à vendre",
+       "keyfacts": [
+        "3 pièces",
+        "2 chambres",
+        "60 m²"
+       ],
+       "facts": [
+        {
+         "type": "numberOfRooms",
+         "value": "3 pièces",
+         "splitValue": "3",
+         "label": "pièces"
+        },
+        {
+         "type": "numberOfBedrooms",
+         "value": "2 chambres",
+         "splitValue": "2",
+         "label": "chambres"
+        },
+        {
+         "type": "livingSpace",
+         "value": "60 m²",
+         "splitValue": "60",
+         "label": "m²"
+        }
+       ],
+       "price": {
+        "value": "248 000 €",
+        "formatted": "248 000 €",
+        "additionalInformation": "4133 €/m²",
+        "financialLink": {
+         "href": "https://www.seloger.com/financement?x=1",
+         "label": "Demander un financement"
+        }
+       }
+      },
+      "energyClass": "E",
+      "type": "PROFESSIONAL",
+      "cardProvider": {
+       "name": "Agence Test"
+      },
+      "rawData": {
+       "distributionType": "BUY",
+       "propertyType": "APARTMENT",
+       "geoIdHierarchy": [
+        {
+         "id": "AD08FR4602",
+         "typeKey": "AD08"
+        },
+        {
+         "id": "AD06FR14",
+         "typeKey": "AD06"
+        },
+        {
+         "id": "AD03FR2",
+         "typeKey": "AD03"
+        },
+        {
+         "id": "AD04FR14",
+         "typeKey": "AD04"
+        },
+        {
+         "id": "AD02FR1",
+         "typeKey": "AD02"
+        }
+       ],
+       "price": 248000,
+       "surface": {
+        "main": 60
+       },
+       "nbroom": 3,
+       "nbbedroom": 2,
+       "propertyTypeLabel": "Appartement"
+      },
+      "tags": {
+       "isExclusive": false,
+       "has3DVisit": false,
+       "hasBrokerageFee": false,
+       "isNew": true
+      },
+      "url": "https://www.seloger.com/annonce/achat/normandie/calvados-14/bayeux-14400/26AAAAAAAAA2"
+     },
+     "26AAAAAAAAA3": {
+      "id": "26AAAAAAAAA3",
+      "status": "Published",
+      "metadata": {
+       "id": "26AAAAAAAAA3",
+       "legacyId": "270000003",
+       "creationDate": "2026-08-09T02:37:00Z",
+       "updateDate": "2026-08-09T02:41:18.156Z"
+      },
+      "location": {
+       "address": {
+        "country": "FRA",
+        "city": "Bayeux",
+        "zipCode": "14400"
+       },
+       "isAddressPublished": false
+      },
+      "hardFacts": {
+       "title": "Appartement à vendre",
+       "keyfacts": [
+        "2 pièces",
+        "1 chambres",
+        "50 m²"
+       ],
+       "facts": [
+        {
+         "type": "numberOfRooms",
+         "value": "2 pièces",
+         "splitValue": "2",
+         "label": "pièces"
+        },
+        {
+         "type": "numberOfBedrooms",
+         "value": "1 chambres",
+         "splitValue": "1",
+         "label": "chambres"
+        },
+        {
+         "type": "livingSpace",
+         "value": "50 m²",
+         "splitValue": "50",
+         "label": "m²"
+        }
+       ],
+       "price": {
+        "value": "210 000 €",
+        "formatted": "210 000 €",
+        "additionalInformation": "4200 €/m²",
+        "financialLink": {
+         "href": "https://www.seloger.com/financement?x=1",
+         "label": "Demander un financement"
+        }
+       }
+      },
+      "energyClass": "D",
+      "type": "PRIVATE",
+      "cardProvider": {
+       "name": null
+      },
+      "rawData": {
+       "distributionType": "BUY",
+       "propertyType": "APARTMENT",
+       "geoIdHierarchy": [
+        {
+         "id": "AD08FR4602",
+         "typeKey": "AD08"
+        },
+        {
+         "id": "AD06FR14",
+         "typeKey": "AD06"
+        },
+        {
+         "id": "AD03FR2",
+         "typeKey": "AD03"
+        },
+        {
+         "id": "AD04FR14",
+         "typeKey": "AD04"
+        },
+        {
+         "id": "AD02FR1",
+         "typeKey": "AD02"
+        }
+       ],
+       "price": 210000,
+       "surface": {
+        "main": 50
+       },
+       "nbroom": 2,
+       "nbbedroom": 1,
+       "propertyTypeLabel": "Appartement"
+      },
+      "tags": {
+       "isExclusive": false,
+       "has3DVisit": false,
+       "hasBrokerageFee": false,
+       "isNew": false
+      },
+      "url": "https://www.seloger.com/annonce/achat/normandie/calvados-14/bayeux-14400/26AAAAAAAAA3"
+     },
+     "26AAAAAAAAA4": {
+      "id": "26AAAAAAAAA4",
+      "status": "Published",
+      "metadata": {
+       "id": "26AAAAAAAAA4",
+       "legacyId": "270000004",
+       "creationDate": "2026-08-09T02:37:00Z",
+       "updateDate": "2026-08-09T02:41:18.156Z"
+      },
+      "location": {
+       "address": {
+        "country": "FRA",
+        "city": "Bayeux",
+        "zipCode": "14400"
+       },
+       "isAddressPublished": false
+      },
+      "hardFacts": {
+       "title": "Appartement à vendre",
+       "keyfacts": [
+        "4 pièces",
+        "3 chambres",
+        "66 m²"
+       ],
+       "facts": [
+        {
+         "type": "numberOfRooms",
+         "value": "4 pièces",
+         "splitValue": "4",
+         "label": "pièces"
+        },
+        {
+         "type": "numberOfBedrooms",
+         "value": "3 chambres",
+         "splitValue": "3",
+         "label": "chambres"
+        },
+        {
+         "type": "livingSpace",
+         "value": "66 m²",
+         "splitValue": "66",
+         "label": "m²"
+        }
+       ],
+       "price": {
+        "value": "265 000 €",
+        "formatted": "265 000 €",
+        "additionalInformation": "4015 €/m²",
+        "financialLink": {
+         "href": "https://www.seloger.com/financement?x=1",
+         "label": "Demander un financement"
+        }
+       }
+      },
+      "energyClass": "B",
+      "type": "PROFESSIONAL",
+      "cardProvider": {
+       "name": "Agence Test"
+      },
+      "rawData": {
+       "distributionType": "BUY",
+       "propertyType": "APARTMENT",
+       "geoIdHierarchy": [
+        {
+         "id": "AD08FR4602",
+         "typeKey": "AD08"
+        },
+        {
+         "id": "AD06FR14",
+         "typeKey": "AD06"
+        },
+        {
+         "id": "AD03FR2",
+         "typeKey": "AD03"
+        },
+        {
+         "id": "AD04FR14",
+         "typeKey": "AD04"
+        },
+        {
+         "id": "AD02FR1",
+         "typeKey": "AD02"
+        }
+       ],
+       "price": 265000,
+       "surface": {
+        "main": 66
+       },
+       "nbroom": 4,
+       "nbbedroom": 3,
+       "propertyTypeLabel": "Appartement"
+      },
+      "tags": {
+       "isExclusive": false,
+       "has3DVisit": false,
+       "hasBrokerageFee": false,
+       "isNew": false
+      },
+      "url": "https://www.seloger.com/annonce/achat/normandie/calvados-14/bayeux-14400/26AAAAAAAAA4"
+     },
+     "26AAAAAAAAA5": {
+      "id": "26AAAAAAAAA5",
+      "status": "Published",
+      "metadata": {
+       "id": "26AAAAAAAAA5",
+       "legacyId": "270000005",
+       "creationDate": "2026-08-09T02:37:00Z",
+       "updateDate": "2026-08-09T02:41:18.156Z"
+      },
+      "location": {
+       "address": {
+        "country": "FRA",
+        "city": "Bayeux",
+        "zipCode": "14400"
+       },
+       "isAddressPublished": false
+      },
+      "hardFacts": {
+       "title": "Appartement à vendre",
+       "keyfacts": [
+        "3 pièces",
+        "2 chambres",
+        "58 m²"
+       ],
+       "facts": [
+        {
+         "type": "numberOfRooms",
+         "value": "3 pièces",
+         "splitValue": "3",
+         "label": "pièces"
+        },
+        {
+         "type": "numberOfBedrooms",
+         "value": "2 chambres",
+         "splitValue": "2",
+         "label": "chambres"
+        },
+        {
+         "type": "livingSpace",
+         "value": "58 m²",
+         "splitValue": "58",
+         "label": "m²"
+        }
+       ],
+       "price": {
+        "value": "300 000 €",
+        "formatted": "300 000 €",
+        "additionalInformation": "5172 €/m²",
+        "financialLink": {
+         "href": "https://www.seloger.com/financement?x=1",
+         "label": "Demander un financement"
+        }
+       }
+      },
+      "energyClass": "F",
+      "type": "PROFESSIONAL",
+      "cardProvider": {
+       "name": "Agence Test"
+      },
+      "rawData": {
+       "distributionType": "BUY",
+       "propertyType": "APARTMENT",
+       "geoIdHierarchy": [
+        {
+         "id": "AD08FR4602",
+         "typeKey": "AD08"
+        },
+        {
+         "id": "AD06FR14",
+         "typeKey": "AD06"
+        },
+        {
+         "id": "AD03FR2",
+         "typeKey": "AD03"
+        },
+        {
+         "id": "AD04FR14",
+         "typeKey": "AD04"
+        },
+        {
+         "id": "AD02FR1",
+         "typeKey": "AD02"
+        }
+       ],
+       "price": 300000,
+       "surface": {
+        "main": 58
+       },
+       "nbroom": 3,
+       "nbbedroom": 2,
+       "propertyTypeLabel": "Appartement"
+      },
+      "tags": {
+       "isExclusive": false,
+       "has3DVisit": false,
+       "hasBrokerageFee": false,
+       "isNew": false
+      },
+      "url": "https://www.seloger.com/annonce/achat/normandie/calvados-14/bayeux-14400/26AAAAAAAAA5"
+     }
+    },
+    "enlargedClassifieds": [],
+    "suggestedClassifieds": []
+   }
+  }
+ }
+}

@@ -6,6 +6,7 @@
             "title": "Overview",
             "transformation": {
                 "fields": [
+                    "recordType",
                     "id",
                     "reference",
                     "title",
@@ -13,28 +14,55 @@
                     "livingArea",
                     "rooms",
                     "bedrooms",
-                    "city",
-                    "zipCode",
                     "dpe",
                     "ges",
-                    "permalink"
+                    "yearOfConstruction",
+                    "city",
+                    "url"
                 ]
             },
             "display": {
                 "component": "table",
                 "properties": {
-                    "id": { "label": "ID" },
-                    "reference": { "label": "Réf." },
-                    "title": { "label": "Titre" },
-                    "price": { "label": "Prix (€)" },
-                    "livingArea": { "label": "Surface (m²)" },
-                    "rooms": { "label": "Pièces" },
-                    "bedrooms": { "label": "Chambres" },
-                    "city": { "label": "Ville" },
-                    "zipCode": { "label": "CP" },
-                    "dpe": { "label": "DPE" },
-                    "ges": { "label": "GES" },
-                    "permalink": { "label": "URL" }
+                    "recordType": {
+                        "label": "Type"
+                    },
+                    "id": {
+                        "label": "ID"
+                    },
+                    "reference": {
+                        "label": "R\u00e9f."
+                    },
+                    "title": {
+                        "label": "Titre"
+                    },
+                    "price": {
+                        "label": "Prix (\u20ac)"
+                    },
+                    "livingArea": {
+                        "label": "Surface (m\u00b2)"
+                    },
+                    "rooms": {
+                        "label": "Pi\u00e8ces"
+                    },
+                    "bedrooms": {
+                        "label": "Chambres"
+                    },
+                    "dpe": {
+                        "label": "DPE"
+                    },
+                    "ges": {
+                        "label": "GES"
+                    },
+                    "yearOfConstruction": {
+                        "label": "Ann\u00e9e"
+                    },
+                    "city": {
+                        "label": "Ville"
+                    },
+                    "url": {
+                        "label": "URL"
+                    }
                 }
             }
         }

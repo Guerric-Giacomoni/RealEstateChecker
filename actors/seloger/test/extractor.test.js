@@ -72,6 +72,29 @@ check('listing with no DPE yields nulls, not a crash', () => {
     assert.equal(out.energyBalance.hasScales, false);
 });
 
+console.log('\nyear of construction');
+const withYear = JSON.parse(readFileSync(join(here, 'fixtures/caen-26AQ6I1A4SEW.json'), 'utf8'));
+check('read from energy.features (Caen, "1800")', () => {
+    const out = mapClassified(withYear, URL_UNDER_TEST);
+    assert.equal(out.yearOfConstruction, 1800);
+    assert.equal(out.energyBalance.yearOfConstruction, 1800);
+});
+check('falls back to the analytics payload', () => {
+    const noFeature = structuredClone(withYear);
+    noFeature.sections.energy.features = noFeature.sections.energy.features.filter(
+        (f) => f.type !== 'yearOfConstruction',
+    );
+    assert.equal(mapClassified(noFeature, URL_UNDER_TEST).yearOfConstruction, 1800);
+});
+check('null when the listing does not declare one (Bayeux)', () =>
+    assert.equal(record.yearOfConstruction, null));
+check('never emits a partial year', () => {
+    const junk = structuredClone(withYear);
+    junk.sections.energy.features[0].value = 'années 1970';
+    delete junk.legacyTracking.products[0].year_of_construction;
+    assert.equal(mapClassified(junk, URL_UNDER_TEST).yearOfConstruction, 1970);
+});
+
 console.log('\ncore listing fields');
 check('id / reference / publicId', () => {
     assert.equal(record.id, 268652599);

@@ -105,11 +105,21 @@ export function extractEnergy(classified) {
     const featureValue = (type) => certFeatures.find((f) => f?.type === type)?.value ?? null;
     const energyFeature = (type) => asArray(energy.features).find((f) => f?.type === type)?.value ?? null;
 
+    // "Année de construction" is filed under energy.features, not the general
+    // feature list — SeLoger groups it with the building's thermal profile.
+    // Not every listing declares it, so this is null far more often than DPE.
+    // Cross-checked against the analytics payload, which carries it as a number.
+    const yearOfConstruction =
+        toNumber(energyFeature('yearOfConstruction')) ??
+        toNumber(pick(classified, ['legacyTracking', 'products', 0, 'year_of_construction']));
+
     return {
         // Convenience top-level letters — what most people actually filter on.
         dpe: dpe?.rating ?? null,
         ges: ges?.rating ?? null,
+        yearOfConstruction: Number.isInteger(yearOfConstruction) ? yearOfConstruction : null,
         energyBalance: {
+            yearOfConstruction: Number.isInteger(yearOfConstruction) ? yearOfConstruction : null,
             hasScales: Boolean(energy.hasScales),
             dpe: dpe ?? null,
             ges: ges ?? null,

@@ -1,18 +1,50 @@
 {
-    "title": "SeLoger Listing Scraper input",
+    "title": "SeLoger Listing & Comparables Scraper",
     "type": "object",
     "schemaVersion": 1,
     "properties": {
-        "startUrls": {
-            "title": "Listing URLs",
+        "comparablesFor": {
+            "title": "Find comparables for these listings",
             "type": "array",
-            "description": "SeLoger listing detail pages to scrape, e.g. https://www.seloger.com/annonces/achat/appartement/bayeux-14/268652599.htm",
+            "description": "Give one listing URL. The actor scrapes it, derives a search from its own characteristics (type, district, price ±15%, surface ±20%) and returns the closest comparable listings alongside it.",
             "editor": "requestListSources",
             "prefill": [
-                {
-                    "url": "https://www.seloger.com/annonces/achat/appartement/bayeux-14/268652599.htm"
-                }
+                { "url": "https://www.seloger.com/annonces/achat/appartement/bayeux-14/268652599.htm" }
             ]
+        },
+        "startUrls": {
+            "title": "Listing URLs (detail only)",
+            "type": "array",
+            "description": "Scrape these listing detail pages and stop. No comparables search.",
+            "editor": "requestListSources"
+        },
+        "searchUrls": {
+            "title": "Search URLs",
+            "type": "array",
+            "description": "Run a SeLoger /classified-search URL you built yourself and return every result card.",
+            "editor": "requestListSources"
+        },
+        "maxComparables": {
+            "title": "Max comparables",
+            "type": "integer",
+            "description": "Upper bound on comparables returned per subject. Fewer are returned when the area is thin — that is normal, not an error.",
+            "default": 10,
+            "minimum": 1,
+            "maximum": 30
+        },
+        "priceTolerance": {
+            "title": "Price tolerance",
+            "type": "string",
+            "description": "How far a comparable may differ in price. 0.15 = ±15%.",
+            "editor": "textfield",
+            "default": "0.15"
+        },
+        "surfaceTolerance": {
+            "title": "Surface tolerance",
+            "type": "string",
+            "description": "How far a comparable may differ in living area. 0.20 = ±20%.",
+            "editor": "textfield",
+            "default": "0.2"
         },
         "proxyConfiguration": {
             "title": "Proxy configuration",
@@ -52,6 +84,5 @@
             "description": "Turn off only when debugging locally.",
             "default": true
         }
-    },
-    "required": ["startUrls"]
+    }
 }
