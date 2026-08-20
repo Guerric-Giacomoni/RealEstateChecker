@@ -380,7 +380,7 @@ export function Table({
             {head.map((h, i) => (
               <th
                 key={h + i}
-                className={`whitespace-nowrap border-b border-line pb-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-faint ${
+                className={`whitespace-nowrap border-b border-line px-3 pb-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-faint first:pl-1 last:pr-1 ${
                   (align[i] ?? "left") === "right" ? "text-right" : "text-left"
                 }`}
               >
@@ -408,12 +408,36 @@ export function Td({
 }) {
   return (
     <td
-      className={`tnum whitespace-nowrap border-b border-line/70 py-2.5 ${
+      className={`tnum whitespace-nowrap border-b border-line/70 px-3 py-2.5 first:pl-1 last:pr-1 ${
         right ? "text-right" : "text-left"
       } ${strong ? "font-semibold text-ink" : "text-slate-600"} ${className}`}
     >
       {children}
     </td>
+  );
+}
+
+/** Colour-coded DPE letter, following the French energy label scale (A→G). */
+const DPE_COLORS: Record<string, string> = {
+  A: "bg-[#319834] text-white",
+  B: "bg-[#4faa3a] text-white",
+  C: "bg-[#a7c60e] text-ink",
+  D: "bg-[#f5e50a] text-ink",
+  E: "bg-[#f6a30b] text-white",
+  F: "bg-[#ec6c1f] text-white",
+  G: "bg-[#e30613] text-white",
+};
+
+export function DpeBadge({ value }: { value: string | null | undefined }) {
+  if (!value) return <span className="text-faint">—</span>;
+  const letter = value.toUpperCase();
+  const cls = DPE_COLORS[letter] ?? "bg-slate-200 text-slate-600";
+  return (
+    <span
+      className={`inline-flex h-[18px] min-w-[18px] items-center justify-center rounded px-1.5 text-[11px] font-bold ${cls}`}
+    >
+      {letter}
+    </span>
   );
 }
 

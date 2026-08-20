@@ -2,7 +2,7 @@
 
 import { useApp } from "@/lib/store";
 import { eur, eurM2, eurMonth, int, monthYear, pct, num, dist } from "@/lib/format";
-import { Badge, Card, CardTitle, Insight, Row, Table, Td, pctWidth } from "../ui";
+import { Badge, Card, CardTitle, DpeBadge, Insight, Row, Table, Td, pctWidth } from "../ui";
 import { ScatterStrip } from "../charts";
 
 export function TabBien() {
@@ -240,13 +240,15 @@ export function TabBien() {
           >
             {comparables.map((c) => (
               <tr key={c.id} className="transition hover:bg-slate-50/70">
-                <Td className="max-w-[200px] truncate text-muted">{c.address ?? "—"}</Td>
+                <Td className="text-slate-600">
+                  <span className="block max-w-[220px] truncate">{c.address || "—"}</span>
+                </Td>
                 <Td right strong>{eur(c.price)}</Td>
                 <Td right>{c.surface} m²</Td>
                 <Td right className={c.pricePerM2 > d.pricePerM2 ? "!text-pos" : "!text-bad"}>
                   {int(c.pricePerM2)} €
                 </Td>
-                <Td>{c.dpe ? <Badge tone="neutral">{c.dpe}</Badge> : <span className="text-faint">—</span>}</Td>
+                <Td><DpeBadge value={c.dpe} /></Td>
                 <Td right>
                   <a
                     href={c.url}
