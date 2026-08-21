@@ -39,6 +39,15 @@ export const COMPARABLES: Comparable[] = [
   { id: "c5", url: "https://www.seloger.com/annonces/achat/appartement/le-mans-72/000005.htm", address: "Sablons, Le Mans (72000)", price: 104000, surface: 71, pricePerM2: 1465, dpe: "C", rooms: 4 },
 ];
 
+/** Stand-in rental "Loyers comparables" — real ones come from the Rent search. */
+export const RENT_COMPARABLES: Comparable[] = [
+  { id: "r1", url: "https://www.seloger.com/annonces/location/appartement/le-mans-72/100001.htm", address: "Jacobins, Le Mans (72000)", price: 720, surface: 64, pricePerM2: 11, dpe: "D", rooms: 3 },
+  { id: "r2", url: "https://www.seloger.com/annonces/location/appartement/le-mans-72/100002.htm", address: "Centre-ville, Le Mans (72000)", price: 690, surface: 60, pricePerM2: 12, dpe: "E", rooms: 3 },
+  { id: "r3", url: "https://www.seloger.com/annonces/location/appartement/le-mans-72/100003.htm", address: "Gare, Le Mans (72000)", price: 640, surface: 55, pricePerM2: 12, dpe: "C", rooms: 2 },
+  { id: "r4", url: "https://www.seloger.com/annonces/location/appartement/le-mans-72/100004.htm", address: "Bollée, Le Mans (72000)", price: 780, surface: 68, pricePerM2: 11, dpe: "D", rooms: 3 },
+  { id: "r5", url: "https://www.seloger.com/annonces/location/appartement/le-mans-72/100005.htm", address: "Sablons, Le Mans (72000)", price: 830, surface: 70, pricePerM2: 12, dpe: "F", rooms: 4 },
+];
+
 export const DEFAULTS: Assumptions = {
   // Le bien
   purchasePrice: 92000,

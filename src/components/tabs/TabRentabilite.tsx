@@ -9,16 +9,7 @@ import {
   sensitivityTable,
   solveThreshold,
 } from "@/lib/finance";
-import {
-  dist,
-  eur,
-  eurMonth,
-  eurMonthSigned,
-  int,
-  monthYear,
-  num,
-  pct,
-} from "@/lib/format";
+import { eur, eurMonth, eurMonthSigned, int, num, pct } from "@/lib/format";
 import {
   Badge,
   Bar,
@@ -568,15 +559,14 @@ function Sensitivity() {
 /* ================================================================== */
 
 function RentComps() {
-  const { a, set, market, comps, d } = useApp();
-  const sorted = [...market.rentComps].sort((x, y) => x.distance - y.distance);
-  const perM2 = market.rentComps.map((c) => c.rent / c.surface);
+  const { a, set, comps, rentComparables, rentComparablesLoading } = useApp();
+  const perM2 = rentComparables.map((c) => c.pricePerM2);
   const rentPerM2 = a.surface > 0 ? a.monthlyRent / a.surface : 0;
 
   return (
     <Card>
       <CardTitle
-        hint={`${market.rentComps.length} annonces locatives dans un rayon de 550 m`}
+        hint="Annonces locatives comparables actuellement en ligne (SeLoger)"
         right={
           <button
             onClick={() => set("monthlyRent", comps.suggestedRent)}
@@ -628,23 +618,45 @@ function RentComps() {
         </Badge>
       </div>
 
-      <Table
-        head={["Loyer", "Surface", "€/m²", "Pièces", "Distance", "Mise en ligne"]}
-        align={["right", "right", "right", "right", "right", "left"]}
-      >
-        {sorted.map((c) => (
-          <tr key={c.id} className="transition hover:bg-slate-50/70">
-            <Td right strong>{eurMonth(c.rent)}</Td>
-            <Td right>{c.surface} m²</Td>
-            <Td right className={c.rent / c.surface >= rentPerM2 ? "!text-pos" : "!text-bad"}>
-              {num(c.rent / c.surface)} €
-            </Td>
-            <Td right>{c.rooms}</Td>
-            <Td right>{dist(c.distance)}</Td>
-            <Td>{monthYear(c.listedOn)}</Td>
-          </tr>
-        ))}
-      </Table>
+      {rentComparablesLoading ? (
+        <div className="flex items-center gap-2.5 py-4 text-[13px] text-muted">
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-navy-200 border-t-navy-600" />
+          Recherche des loyers comparables en cours…
+        </div>
+      ) : rentComparables.length === 0 ? (
+        <p className="text-[13px] text-muted">
+          Aucun loyer comparable actuellement en ligne pour ce bien.
+        </p>
+      ) : (
+        <Table
+          head={["Adresse", "Loyer", "Surface", "€/m²", "Pièces", ""]}
+          align={["left", "right", "right", "right", "right", "right"]}
+        >
+          {rentComparables.map((c) => (
+            <tr key={c.id} className="transition hover:bg-slate-50/70">
+              <Td className="text-slate-600">
+                <span className="block max-w-[220px] truncate">{c.address || "—"}</span>
+              </Td>
+              <Td right strong>{eurMonth(c.price)}</Td>
+              <Td right>{c.surface} m²</Td>
+              <Td right className={c.pricePerM2 >= rentPerM2 ? "!text-pos" : "!text-bad"}>
+                {num(c.pricePerM2)} €
+              </Td>
+              <Td right>{c.rooms ?? "—"}</Td>
+              <Td right>
+                <a
+                  href={c.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-medium text-navy-600 hover:underline"
+                >
+                  Voir ↗
+                </a>
+              </Td>
+            </tr>
+          ))}
+        </Table>
+      )}
     </Card>
   );
 }

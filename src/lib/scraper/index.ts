@@ -84,7 +84,13 @@ export async function pollScrapeRun(
     getApifyRunStatus(runId),
     getApifyDatasetItems(datasetId),
   ]);
-  const poll: ScrapePoll = { status, done: isTerminalStatus(status), comparables: [], warnings: [] };
+  const poll: ScrapePoll = {
+    status,
+    done: isTerminalStatus(status),
+    comparables: [],
+    rentComparables: [],
+    warnings: [],
+  };
 
   if (items.length) {
     try {
@@ -93,6 +99,7 @@ export async function pollScrapeRun(
       poll.property = mapped.property;
       poll.assumptions = mapped.assumptions;
       poll.comparables = mapped.comparables;
+      poll.rentComparables = mapped.rentComparables;
       poll.warnings = mapped.warnings;
     } catch {
       // Subject not scraped yet (early poll) — leave property undefined and let

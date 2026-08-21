@@ -13,8 +13,10 @@ export type ScrapeResult = {
   property: Property;
   /** Only the fields the listing actually gave us — merged over DEFAULTS. */
   assumptions: Partial<Assumptions>;
-  /** Currently-listed comparable properties (SeLoger only; empty otherwise). */
+  /** Currently-listed comparable properties for sale (SeLoger only; empty otherwise). */
   comparables: Comparable[];
+  /** Currently-listed rental comparables (SeLoger only; price = monthly rent). */
+  rentComparables: Comparable[];
   /** Fields we could not find, surfaced so the UI can nudge the user to fill them. */
   warnings: string[];
 };
@@ -36,6 +38,7 @@ export type ScrapePoll = {
   property?: Property;
   assumptions?: Partial<Assumptions>;
   comparables: Comparable[];
+  rentComparables: Comparable[];
   warnings: string[];
 };
 

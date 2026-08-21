@@ -61,7 +61,14 @@ export function mapLeboncoinItem(raw: unknown, url: string): ScrapeResult {
   if (property.askingPrice > 0) assumptions.purchasePrice = property.askingPrice;
   if (property.surface > 0) assumptions.surface = property.surface;
 
-  return { source: "leboncoin", property, assumptions, comparables: [], warnings };
+  return {
+    source: "leboncoin",
+    property,
+    assumptions,
+    comparables: [],
+    rentComparables: [],
+    warnings,
+  };
 }
 
 /* ------------------------------------------------------------------ */

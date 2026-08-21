@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { COMPARABLES, DEFAULTS, MARKET, PROPERTY } from "./mock";
+import { COMPARABLES, DEFAULTS, MARKET, PROPERTY, RENT_COMPARABLES } from "./mock";
 import { derive, scoreDeal, stats } from "./finance";
 import { startScrapeClient, pollScrapeClient, ScrapeClientError } from "./scrape-client";
 import type { Assumptions, Comparable, Profile, Property } from "./types";
@@ -41,6 +41,10 @@ type Ctx = {
   comparables: Comparable[];
   /** True while the comparables search is still running in the background. */
   comparablesLoading: boolean;
+  /** Currently-listed rental comparables (SeLoger). */
+  rentComparables: Comparable[];
+  /** True while the rent comparables search is still running. */
+  rentComparablesLoading: boolean;
   /**
    * Start scraping a listing URL. Resolves once the subject property is ready
    * (so the UI can advance); comparables keep loading in the background.
@@ -64,6 +68,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [property, setProperty] = useState<Property>(PROPERTY);
   const [comparables, setComparables] = useState<Comparable[]>(COMPARABLES);
   const [comparablesLoading, setComparablesLoading] = useState(false);
+  const [rentComparables, setRentComparables] = useState<Comparable[]>(RENT_COMPARABLES);
+  const [rentComparablesLoading, setRentComparablesLoading] = useState(false);
   const [profile, setProfileState] = useState<Profile | null>(null);
   const [onboarded, setOnboarded] = useState(false);
   const [showOther, setShowOther] = useState(false);
@@ -90,8 +96,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
           resolve(); // subject is ready — the UI can advance
         }
       };
-      const fail = (e: unknown) => {
+      const stopLoading = () => {
         setComparablesLoading(false);
+        setRentComparablesLoading(false);
+      };
+      const fail = (e: unknown) => {
+        stopLoading();
         if (!settled) {
           settled = true;
           reject(e);
@@ -100,41 +110,48 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       (async () => {
         setComparables([]); // clear any stale/demo comparables
+        setRentComparables([]);
         try {
           const { runId, datasetId, source } = await startScrapeClient(rawUrl);
           setComparablesLoading(source === "seloger");
+          setRentComparablesLoading(source === "seloger");
           const deadline = Date.now() + POLL_DEADLINE_MS;
 
+          // The run pushes records in order: subject → sale comps → rent comps.
+          // Apply the subject immediately, then keep polling until the run ends
+          // so both comparable sets fill in.
           for (;;) {
-            const poll = await pollScrapeClient(runId, datasetId, source, rawUrl).catch(
-              (e) => {
-                // Tolerate a transient poll hiccup unless we're out of time.
-                if (Date.now() > deadline) throw e;
-                return null;
-              },
-            );
+            const poll = await pollScrapeClient(runId, datasetId, source, rawUrl).catch((e) => {
+              // Tolerate a transient poll hiccup unless we're out of time.
+              if (Date.now() > deadline) throw e;
+              return null;
+            });
 
             if (poll) {
               if (poll.property && !subjectApplied) applySubject(poll.property, poll.assumptions ?? {});
               if (poll.comparables.length) {
                 setComparables(poll.comparables);
                 setComparablesLoading(false);
-                return; // got the subject + comparables; nothing left to wait for
+              }
+              if (poll.rentComparables.length) {
+                setRentComparables(poll.rentComparables);
+                setRentComparablesLoading(false);
               }
               if (poll.done) {
                 setComparables(poll.comparables);
-                setComparablesLoading(false);
+                setRentComparables(poll.rentComparables);
+                stopLoading();
                 if (!subjectApplied) {
                   throw new ScrapeClientError(
                     "L'annonce n'a pas pu être récupérée (protégée ou indisponible).",
                   );
                 }
-                return; // finished with no comparables (thin area)
+                return; // run finished
               }
             }
 
             if (Date.now() > deadline) {
-              setComparablesLoading(false);
+              stopLoading();
               if (!subjectApplied) {
                 throw new ScrapeClientError("Le scraping a dépassé le délai d'attente. Réessayez.");
               }
@@ -170,14 +187,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const comps = useMemo(() => {
     const salePerM2 = stats(MARKET.saleComps.map((c) => c.price / c.surface));
     const salePrices = stats(MARKET.saleComps.map((c) => c.price));
-    const rentPerM2 = stats(MARKET.rentComps.map((c) => c.rent / c.surface));
+    // Rent stats come from scraped rental comparables when we have them
+    // (price = monthly rent, pricePerM2 = rent/m²), else the mock market.
+    const rentPerM2Values =
+      rentComparables.length > 0
+        ? rentComparables.map((c) => c.pricePerM2).filter((v) => v > 0)
+        : MARKET.rentComps.map((c) => c.rent / c.surface);
+    const rentPerM2 = stats(rentPerM2Values);
     const suggestedRent = Math.round((rentPerM2.median * a.surface) / 5) * 5;
     const priceVsComps =
       salePerM2.median > 0 ? (d.pricePerM2 / salePerM2.median - 1) * 100 : 0;
     const rentVsComps =
       suggestedRent > 0 ? (a.monthlyRent / suggestedRent - 1) * 100 : 0;
     return { salePerM2, salePrices, rentPerM2, suggestedRent, priceVsComps, rentVsComps };
-  }, [a.surface, a.monthlyRent, d.pricePerM2]);
+  }, [a.surface, a.monthlyRent, d.pricePerM2, rentComparables]);
 
   const scoring = useMemo(
     () =>
@@ -202,6 +225,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     property,
     comparables,
     comparablesLoading,
+    rentComparables,
+    rentComparablesLoading,
     startScrape,
     comps,
     scoring,

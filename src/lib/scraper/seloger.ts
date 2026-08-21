@@ -66,7 +66,14 @@ export function mapSelogerItem(raw: unknown, url: string): ScrapeResult {
   if (property.askingPrice > 0) assumptions.purchasePrice = property.askingPrice;
   if (property.surface > 0) assumptions.surface = property.surface;
 
-  return { source: "seloger", property, assumptions, comparables: [], warnings };
+  return {
+    source: "seloger",
+    property,
+    assumptions,
+    comparables: [],
+    rentComparables: [],
+    warnings,
+  };
 }
 
 /**
@@ -93,11 +100,16 @@ export function mapSelogerDataset(items: unknown[], url: string): ScrapeResult {
     );
   }
   const base = mapSelogerItem(subject, url);
-  const comparables = records
-    .filter((r) => r.recordType === "comparable")
-    .map(mapComparable)
-    .filter((c): c is Comparable => c !== null);
-  return { ...base, comparables };
+  const pickComps = (type: string) =>
+    records
+      .filter((r) => r.recordType === type)
+      .map(mapComparable)
+      .filter((c): c is Comparable => c !== null);
+  return {
+    ...base,
+    comparables: pickComps("comparable"),
+    rentComparables: pickComps("rentComparable"),
+  };
 }
 
 /** One `comparable` record → the flat shape the "Ventes en cours" table renders. */
