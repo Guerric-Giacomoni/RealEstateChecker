@@ -4,7 +4,12 @@ import { Dataset } from 'apify';
 import { BLOCK_MARKERS, LABELS, SERP_STATE_KEY } from './constants.js';
 import { classifiedFromPage, classifiedFromHtml, mapClassified } from './extractor.js';
 import { serpFromPage, serpFromHtml, mapSerpResults } from './serp.js';
-import { buildComparablesSearchUrl, selectComparables } from './comparables.js';
+import {
+    buildComparablesSearchUrl,
+    buildRentComparablesSearchUrl,
+    selectComparables,
+    selectRentComparables,
+} from './comparables.js';
 
 export const router = createPlaywrightRouter();
 
@@ -96,6 +101,23 @@ async function handleDetail(context) {
             userData: { role: 'comparables', subject: record, criteria, searchParams: search.params },
         },
     ]);
+
+    // Rent comparables: same area/type/surface, but a Rent search with no price
+    // band — used downstream to estimate the rental yield of a for-sale listing.
+    const rentSearch = buildRentComparablesSearchUrl(record, criteria);
+    if (rentSearch.url) {
+        log.info(
+            `→ rent comparables search: ${rentSearch.params.estateTypes} in ${rentSearch.params.locations}, ` +
+            `${rentSearch.params.spaceMin}–${rentSearch.params.spaceMax} m²`,
+        );
+        await crawler.addRequests([
+            {
+                url: rentSearch.url,
+                label: LABELS.SERP,
+                userData: { role: 'rentComparables', subject: record, criteria, searchParams: rentSearch.params },
+            },
+        ]);
+    }
 }
 
 router.addHandler(LABELS.DETAIL, handleDetail);
@@ -128,6 +150,46 @@ router.addHandler(LABELS.SERP, async (context) => {
     const { role, subject, criteria = {}, searchParams = null } = request.userData ?? {};
 
     log.info(`Search returned ${results.length} cards (${totalCount} total matches, page ${pageNumber}).`);
+
+    if (role === 'rentComparables' && subject) {
+        const rentComparables = selectRentComparables(subject, results, criteria);
+
+        for (const rc of rentComparables) {
+            await Dataset.pushData({
+                recordType: 'rentComparable',
+                subjectId: subject.id,
+                searchUrl: request.url,
+                ...rc,
+            });
+        }
+
+        const perM2 = rentComparables
+            .map((c) => c.squareMeterPrice)
+            .filter(Number.isFinite)
+            .sort((a, b) => a - b);
+        const median = perM2.length
+            ? perM2.length % 2
+                ? perM2[(perM2.length - 1) / 2]
+                : Number(((perM2[perM2.length / 2 - 1] + perM2[perM2.length / 2]) / 2).toFixed(2))
+            : null;
+
+        await Dataset.pushData({
+            recordType: 'rentComparablesSummary',
+            subjectId: subject.id,
+            searchUrl: request.url,
+            searchParams,
+            totalMatches: totalCount,
+            cardsOnPage: results.length,
+            rentComparablesReturned: rentComparables.length,
+            medianRentPerM2: median,
+        });
+
+        log.info(
+            `✓ ${rentComparables.length} rent comparables for ${subject.reference ?? subject.id}` +
+            (median ? ` — median ${median} €/m²/mois` : ''),
+        );
+        return;
+    }
 
     if (role !== 'comparables' || !subject) {
         // Plain search mode: emit every card as its own record.

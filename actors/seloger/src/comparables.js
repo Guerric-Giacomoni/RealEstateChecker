@@ -67,7 +67,7 @@ function band(value, tolerance, roundTo) {
  *   `missing` lists the characteristics we could not derive, so the caller can
  *   report a degraded search instead of silently returning bad comparables.
  */
-export function buildComparablesSearchUrl(subject, criteria = {}) {
+function buildSearch(subject, criteria, { distributionType, includePrice }) {
     const { priceTolerance, surfaceTolerance, searchBaseUrl } = { ...DEFAULT_CRITERIA, ...criteria };
 
     const price = toNumber(subject?.price);
@@ -84,26 +84,29 @@ export function buildComparablesSearchUrl(subject, criteria = {}) {
     const missing = [];
     if (!placeId) missing.push('placeId');
     if (!estateType) missing.push('estateTypes');
-    if (!price) missing.push('price');
+    if (includePrice && !price) missing.push('price');
     if (!surface) missing.push('livingArea');
 
     // Location is the one filter we cannot sensibly default: a nationwide
     // search is not a comparables search. Bail rather than return noise.
     if (!placeId) return { url: null, params: {}, missing };
 
-    const priceBand = band(price, priceTolerance, 1000);
-    const spaceBand = band(surface, surfaceTolerance, 1);
-
     const params = {
-        distributionTypes: toDistributionType(subject),
+        distributionTypes: distributionType ?? toDistributionType(subject),
         estateTypes: estateType,
         locations: placeId,
         method: 'form',
     };
-    if (priceBand.min !== null) {
-        params.priceMin = priceBand.min;
-        params.priceMax = priceBand.max;
+    // Sale comparables are bounded by a price band; rent comparables are not —
+    // the rent is what we are trying to estimate, so we filter on surface only.
+    if (includePrice) {
+        const priceBand = band(price, priceTolerance, 1000);
+        if (priceBand.min !== null) {
+            params.priceMin = priceBand.min;
+            params.priceMax = priceBand.max;
+        }
     }
+    const spaceBand = band(surface, surfaceTolerance, 1);
     if (spaceBand.min !== null) {
         params.spaceMin = spaceBand.min;
         params.spaceMax = spaceBand.max;
@@ -118,6 +121,16 @@ export function buildComparablesSearchUrl(subject, criteria = {}) {
         params,
         missing,
     };
+}
+
+/** Sale comparables: same district/type/surface, price band around the subject. */
+export function buildComparablesSearchUrl(subject, criteria = {}) {
+    return buildSearch(subject, criteria, { includePrice: true });
+}
+
+/** Rent comparables: same district/type/surface, distributionTypes=Rent, no price band. */
+export function buildRentComparablesSearchUrl(subject, criteria = {}) {
+    return buildSearch(subject, criteria, { distributionType: 'Rent', includePrice: false });
 }
 
 /**
@@ -185,5 +198,36 @@ export function selectComparables(subject, candidates, criteria = {}) {
             },
         }))
         .sort((a, b) => a.comparison.similarityScore - b.comparison.similarityScore)
+        .slice(0, maxComparables);
+}
+
+/**
+ * Rent comparables can't be ranked by price similarity — the subject is for
+ * sale, so it has no rent to compare against. Rank by surface proximity instead
+ * (the closest sizes are the most useful for estimating a rent), and expose
+ * each card's rent/m² for the caller.
+ */
+export function selectRentComparables(subject, candidates, criteria = {}) {
+    const { maxComparables } = { ...DEFAULT_CRITERIA, ...criteria };
+    const subjectArea = toNumber(subject?.livingArea);
+
+    return candidates
+        .filter((c) => c && toNumber(c.price) !== null && toNumber(c.livingArea) !== null)
+        .map((c) => ({
+            ...c,
+            comparison: {
+                rentPerM2: toNumber(c.squareMeterPrice),
+                surfaceDeltaPct: relativeDelta(subject?.livingArea, c.livingArea),
+                roomsDelta:
+                    toNumber(c.rooms) !== null && toNumber(subject?.rooms) !== null
+                        ? toNumber(c.rooms) - toNumber(subject.rooms)
+                        : null,
+            },
+        }))
+        .sort(
+            (a, b) =>
+                Math.abs(toNumber(a.livingArea) - subjectArea) -
+                Math.abs(toNumber(b.livingArea) - subjectArea),
+        )
         .slice(0, maxComparables);
 }

@@ -14,7 +14,9 @@ import { mapClassified } from '../src/extractor.js';
 import { serpFromHtml, mapSerpResults, mapSerpCard } from '../src/serp.js';
 import {
     buildComparablesSearchUrl,
+    buildRentComparablesSearchUrl,
     selectComparables,
+    selectRentComparables,
     similarityScore,
     toEstateType,
 } from '../src/comparables.js';
@@ -94,6 +96,35 @@ check('estate type fallback for unknown types', () => {
     assert.equal(toEstateType('HOUSE'), 'House');
     assert.equal(toEstateType('WAREHOUSE'), 'Warehouse');
     assert.equal(toEstateType(null), null);
+});
+
+console.log('\nrent comparables');
+const rentSearch = buildRentComparablesSearchUrl(subject);
+const rp = new URL(rentSearch.url).searchParams;
+
+check('rent search flips distributionTypes to Rent', () =>
+    assert.equal(rp.get('distributionTypes'), 'Rent'));
+check('rent search drops the price band', () => {
+    assert.equal(rp.get('priceMin'), null);
+    assert.equal(rp.get('priceMax'), null);
+});
+check('rent search keeps location, estate type and surface band', () => {
+    assert.equal(rp.get('locations'), 'AD08FR4602');
+    assert.equal(rp.get('estateTypes'), 'Apartment');
+    assert.equal(rp.get('spaceMin'), '45');
+    assert.equal(rp.get('spaceMax'), '69');
+});
+check('rent selection ranks by surface proximity to the subject (57 m²)', () => {
+    const candidates = [
+        { publicId: 'a', price: 2400, livingArea: 80, squareMeterPrice: 30, rooms: 3 },
+        { publicId: 'b', price: 1200, livingArea: 55, squareMeterPrice: 21.8, rooms: 3 },
+        { publicId: 'c', price: 1400, livingArea: 60, squareMeterPrice: 23.3, rooms: 3 },
+    ];
+    const out = selectRentComparables(subject, candidates, { maxComparables: 2 });
+    assert.equal(out.length, 2);
+    assert.equal(out[0].publicId, 'b'); // 55 m² — closest to 57
+    assert.equal(out[1].publicId, 'c'); // 60 m² — next closest
+    assert.ok(Number.isFinite(out[0].comparison.rentPerM2));
 });
 
 console.log('\nSERP parsing');
