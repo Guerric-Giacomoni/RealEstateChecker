@@ -61,6 +61,17 @@ export type Comparable = {
   rooms: number | null;
 };
 
+/** A past sold transaction from DVF (Demandes de Valeurs Foncières). */
+export type DvfComp = {
+  id: string;
+  soldOn: string; // ISO-ish "2025-MM-01"
+  price: number;
+  surface: number;
+  pricePerM2: number;
+  rooms: number | null;
+  type: string; // "Appartement" | "Maison"
+};
+
 export type SaleComp = {
   id: string;
   date: string;

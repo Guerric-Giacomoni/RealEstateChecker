@@ -1,15 +1,15 @@
 "use client";
 
 import { useApp } from "@/lib/store";
-import { eur, eurM2, eurMonth, int, monthYear, pct, num, dist } from "@/lib/format";
+import { eur, eurM2, eurMonth, int, monthYear, pct, num } from "@/lib/format";
 import { Badge, Card, CardTitle, DpeBadge, Insight, Row, Table, Td, pctWidth } from "../ui";
 import { ScatterStrip } from "../charts";
 
 export function TabBien() {
-  const { a, d, property, market, comps, comparables, comparablesLoading } = useApp();
+  const { a, d, property, comps, comparables, comparablesLoading, saleComps, saleCompsLoading } =
+    useApp();
 
-  const sorted = [...market.saleComps].sort((x, y) => x.distance - y.distance);
-  const perM2 = market.saleComps.map((c) => c.price / c.surface);
+  const perM2 = saleComps.map((c) => c.pricePerM2);
 
   return (
     <div className="space-y-4">
@@ -150,7 +150,11 @@ export function TabBien() {
       {/* ---------------- Comparables de vente ---------------- */}
       <Card>
         <CardTitle
-          hint={`${market.saleComps.length} transactions DVF dans un rayon de 600 m`}
+          hint={
+            saleComps.length
+              ? `${saleComps.length} ventes réelles (DVF 2025) — même code postal`
+              : "Ventes réelles enregistrées (DVF 2025)"
+          }
           right={
             <Badge tone={comps.priceVsComps > 3 ? "bad" : comps.priceVsComps < -3 ? "good" : "warn"}>
               {comps.priceVsComps > 0 ? "+" : ""}
@@ -195,27 +199,33 @@ export function TabBien() {
           </Insight>
         </div>
 
-        <Table
-          head={["Date", "Prix", "Surface", "€/m²", "Pièces", "DPE", "Distance"]}
-          align={["left", "right", "right", "right", "right", "left", "right"]}
-        >
-          {sorted.map((c) => {
-            const ppm = c.price / c.surface;
-            return (
+        {saleCompsLoading ? (
+          <div className="flex items-center gap-2.5 py-4 text-[13px] text-muted">
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-navy-200 border-t-navy-600" />
+            Recherche des ventes récentes…
+          </div>
+        ) : saleComps.length === 0 ? (
+          <p className="text-[13px] text-muted">
+            Aucune vente enregistrée (DVF 2025) dans ce code postal.
+          </p>
+        ) : (
+          <Table
+            head={["Date", "Prix", "Surface", "€/m²", "Pièces"]}
+            align={["left", "right", "right", "right", "right"]}
+          >
+            {saleComps.map((c) => (
               <tr key={c.id} className="transition hover:bg-slate-50/70">
-                <Td>{monthYear(c.date)}</Td>
+                <Td>{monthYear(c.soldOn)}</Td>
                 <Td right strong>{eur(c.price)}</Td>
                 <Td right>{c.surface} m²</Td>
-                <Td right className={ppm > d.pricePerM2 ? "!text-pos" : "!text-bad"}>
-                  {int(ppm)} €
+                <Td right className={c.pricePerM2 > d.pricePerM2 ? "!text-pos" : "!text-bad"}>
+                  {int(c.pricePerM2)} €
                 </Td>
-                <Td right>{c.rooms}</Td>
-                <Td>{c.dpe ? <Badge tone="neutral">{c.dpe}</Badge> : <span className="text-faint">—</span>}</Td>
-                <Td right>{dist(c.distance)}</Td>
+                <Td right>{c.rooms ?? "—"}</Td>
               </tr>
-            );
-          })}
-        </Table>
+            ))}
+          </Table>
+        )}
       </Card>
 
       {/* ---------------- Ventes en cours ---------------- */}

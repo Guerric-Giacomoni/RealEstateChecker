@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -11,7 +12,20 @@ import {
 import { COMPARABLES, DEFAULTS, MARKET, PROPERTY, RENT_COMPARABLES } from "./mock";
 import { derive, scoreDeal, stats } from "./finance";
 import { startScrapeClient, pollScrapeClient, ScrapeClientError } from "./scrape-client";
-import type { Assumptions, Comparable, Profile, Property } from "./types";
+import type { Assumptions, Comparable, DvfComp, Profile, Property } from "./types";
+
+/** Fetch real past-sold comparables (DVF) for a postal code + type + surface. */
+async function fetchDvfComps(cp: string, type: string, surface: number): Promise<DvfComp[]> {
+  try {
+    const res = await fetch(
+      `/api/dvf/comparables?cp=${cp}&type=${encodeURIComponent(type)}&surface=${surface}`,
+    );
+    if (!res.ok) return [];
+    return (await res.json()).comps ?? [];
+  } catch {
+    return [];
+  }
+}
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const POLL_INTERVAL_MS = 3000;
@@ -57,6 +71,10 @@ type Ctx = {
   rentComparables: Comparable[];
   /** True while the rent comparables search is still running. */
   rentComparablesLoading: boolean;
+  /** Past sold comparables (DVF) for the property's postal code. */
+  saleComps: DvfComp[];
+  /** True while the DVF lookup is in flight. */
+  saleCompsLoading: boolean;
   /**
    * Start scraping a listing URL. Resolves once the subject property is ready
    * (so the UI can advance); comparables keep loading in the background.
@@ -84,6 +102,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [comparablesLoading, setComparablesLoading] = useState(false);
   const [rentComparables, setRentComparables] = useState<Comparable[]>(RENT_COMPARABLES);
   const [rentComparablesLoading, setRentComparablesLoading] = useState(false);
+  const [saleComps, setSaleComps] = useState<DvfComp[]>([]);
+  const [saleCompsLoading, setSaleCompsLoading] = useState(false);
   const [profile, setProfileState] = useState<Profile | null>(null);
   const [onboarded, setOnboarded] = useState(false);
   const [showOther, setShowOther] = useState(false);
@@ -238,9 +258,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const d = useMemo(() => derive(a), [a]);
 
+  // Pull real DVF sold comparables whenever the property's postal code / type
+  // changes (also on surface edits — the query is a fast local SQLite lookup).
+  useEffect(() => {
+    const cp = property.postalCode;
+    const t = setTimeout(() => {
+      if (!/^\d{5}$/.test(cp || "")) {
+        setSaleComps([]);
+        setSaleCompsLoading(false);
+        return;
+      }
+      setSaleCompsLoading(true);
+      fetchDvfComps(cp, property.type, a.surface).then((rows) => {
+        setSaleComps(rows);
+        setSaleCompsLoading(false);
+      });
+    }, 250);
+    return () => clearTimeout(t);
+  }, [property.postalCode, property.type, a.surface]);
+
   const comps = useMemo(() => {
-    const salePerM2 = stats(MARKET.saleComps.map((c) => c.price / c.surface));
-    const salePrices = stats(MARKET.saleComps.map((c) => c.price));
+    // Sale stats come from real DVF sold transactions when available, else mock.
+    const saleSource =
+      saleComps.length > 0
+        ? saleComps.map((c) => ({ price: c.price, surface: c.surface }))
+        : MARKET.saleComps;
+    const salePerM2 = stats(saleSource.map((c) => c.price / c.surface));
+    const salePrices = stats(saleSource.map((c) => c.price));
     // Rent stats come from scraped rental comparables when we have them
     // (price = monthly rent, pricePerM2 = rent/m²), else the mock market.
     const rentPerM2Values =
@@ -254,7 +298,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const rentVsComps =
       suggestedRent > 0 ? (a.monthlyRent / suggestedRent - 1) * 100 : 0;
     return { salePerM2, salePrices, rentPerM2, suggestedRent, priceVsComps, rentVsComps };
-  }, [a.surface, a.monthlyRent, d.pricePerM2, rentComparables]);
+  }, [a.surface, a.monthlyRent, d.pricePerM2, rentComparables, saleComps]);
 
   const scoring = useMemo(
     () =>
@@ -281,6 +325,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     comparablesLoading,
     rentComparables,
     rentComparablesLoading,
+    saleComps,
+    saleCompsLoading,
     startScrape,
     applyManualEntry,
     comps,
