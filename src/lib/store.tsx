@@ -17,6 +17,18 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const POLL_INTERVAL_MS = 3000;
 const POLL_DEADLINE_MS = 240_000; // give up after ~4 min
 
+/** Fields the user types in when the URL import can't be used. */
+export type ManualEntry = {
+  type: string; // "Appartement" | "Maison"
+  price: number; // asking price, FAI or hors honoraires per feesIncluded
+  feesIncluded: boolean; // true = frais d'agence inclus
+  surface: number;
+  city: string;
+  postalCode: string;
+  department?: string;
+  rooms?: number;
+};
+
 type Ctx = {
   a: Assumptions;
   set: <K extends keyof Assumptions>(key: K, value: Assumptions[K]) => void;
@@ -50,6 +62,8 @@ type Ctx = {
    * (so the UI can advance); comparables keep loading in the background.
    */
   startScrape: (url: string) => Promise<void>;
+  /** Populate the analysis from manually-typed data (no scrape, no comparables). */
+  applyManualEntry: (entry: ManualEntry) => void;
   comps: {
     salePerM2: ReturnType<typeof stats>;
     salePrices: ReturnType<typeof stats>;
@@ -166,6 +180,46 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const applyManualEntry = useCallback((entry: ManualEntry) => {
+    setProperty({
+      url: "",
+      title: `${entry.type} — ${entry.surface} m²`,
+      address: "",
+      city: entry.city,
+      postalCode: entry.postalCode,
+      askingPrice: entry.price,
+      surface: entry.surface,
+      rooms: entry.rooms ?? 0,
+      bedrooms: 0,
+      type: entry.type,
+      dpe: "—",
+      ges: "—",
+      floor: "",
+      year: "",
+      description: "",
+      photo: "",
+      features: [],
+      energy: { condition: null, heatingSystem: null, energySource: null },
+      districtGeoId: null,
+      scrapedOn: new Date().toISOString().slice(0, 10),
+    });
+    // No comparables for a manual entry — clear the demo rows so the tables
+    // show their honest empty state rather than mismatched listings.
+    setComparables([]);
+    setRentComparables([]);
+    setComparablesLoading(false);
+    setRentComparablesLoading(false);
+    // Frais d'agence inclus → fees already in the price; hors honoraires → add
+    // a ~5% estimate the user can adjust in Hypothèses.
+    const agencyFees = entry.feesIncluded ? 0 : Math.round(entry.price * 0.05);
+    setA((prev) => ({
+      ...prev,
+      purchasePrice: entry.price,
+      surface: entry.surface,
+      agencyFees,
+    }));
+  }, []);
+
   const finishOnboarding = useCallback((p: Profile, values: Partial<Assumptions>) => {
     setProfileState(p);
     setA((prev) => ({ ...prev, ...values }));
@@ -228,6 +282,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     rentComparables,
     rentComparablesLoading,
     startScrape,
+    applyManualEntry,
     comps,
     scoring,
   };

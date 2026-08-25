@@ -1,12 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import { UrlSearchBar } from "./UrlSearchBar";
+import { ManualEntryForm } from "./ManualEntryForm";
 
 /**
- * Entry screen: paste a listing URL to pull in real data, or continue with the
- * demo property. Shown once, before onboarding.
+ * Entry screen: paste a listing URL, type the details in by hand, or continue
+ * with the demo property. Shown once, before onboarding.
  */
 export function Landing({ onReady }: { onReady: () => void }) {
+  const [manual, setManual] = useState(false);
+
   return (
     <div className="flex min-h-screen flex-col bg-canvas">
       <header className="border-b border-line bg-white">
@@ -37,12 +41,33 @@ export function Landing({ onReady }: { onReady: () => void }) {
             <UrlSearchBar variant="hero" autoFocus onSuccess={onReady} />
           </div>
 
-          <button
-            onClick={onReady}
-            className="mt-6 text-[13px] font-medium text-navy-600 underline-offset-2 transition hover:underline"
-          >
-            Ou continuer avec l&apos;exemple de démonstration →
-          </button>
+          {manual ? (
+            <div className="mt-5">
+              <ManualEntryForm onSuccess={onReady} />
+              <button
+                onClick={() => setManual(false)}
+                className="mt-3 text-[13px] font-medium text-muted underline-offset-2 transition hover:underline"
+              >
+                Annuler la saisie manuelle
+              </button>
+            </div>
+          ) : (
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+              <button
+                onClick={() => setManual(true)}
+                className="text-[13px] font-medium text-navy-600 underline-offset-2 transition hover:underline"
+              >
+                L&apos;import n&apos;a pas fonctionné ? Saisir les infos manuellement
+              </button>
+              <span className="hidden text-faint sm:inline">·</span>
+              <button
+                onClick={onReady}
+                className="text-[13px] font-medium text-navy-600 underline-offset-2 transition hover:underline"
+              >
+                Ou continuer avec l&apos;exemple de démonstration →
+              </button>
+            </div>
+          )}
         </div>
       </main>
     </div>
