@@ -61,6 +61,17 @@ export type Comparable = {
   rooms: number | null;
 };
 
+/** One row in the DVF explorer table. */
+export type DvfRow = {
+  cp: string;
+  type: string; // "Appartement" | "Maison"
+  price: number;
+  surface: number;
+  priceM2: number;
+  rooms: number | null;
+  month: number; // 1–12 (all 2025)
+};
+
 /** A past sold transaction from DVF (Demandes de Valeurs Foncières). */
 export type DvfComp = {
   id: string;
