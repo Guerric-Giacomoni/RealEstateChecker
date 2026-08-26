@@ -16,7 +16,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    return Response.json({ comps: queryDvfComparables(cp, type, surface) });
+    return Response.json({ comps: await queryDvfComparables(cp, type, surface) });
   } catch (e) {
     console.error("[dvf/comparables]", e);
     return Response.json({ comps: [] });

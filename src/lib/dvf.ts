@@ -1,65 +1,50 @@
-import Database from "better-sqlite3";
-import path from "node:path";
+import { createClient, type Client } from "@libsql/client";
 import type { DvfComp, DvfRow } from "./types";
 
 /**
- * Server-only DVF lookups against the bundled SQLite (data/dvf-2025.sqlite).
- * One read-only connection, reused across requests. Keyed on postal code,
- * which is arrondissement-precise for Paris/Lyon/Marseille (unlike commune INSEE).
+ * DVF lookups against the hosted Turso database (data lives there, not in the
+ * repo). One client, reused across requests. Keyed on postal code, which is
+ * arrondissement-precise for Paris/Lyon/Marseille (unlike commune INSEE).
  */
-let db: Database.Database | null = null;
+let client: Client | null = null;
 
-function getDb(): Database.Database {
-  if (!db) {
-    db = new Database(path.join(process.cwd(), "data", "dvf-2025.sqlite"), {
-      readonly: true,
-      fileMustExist: true,
-    });
+function getClient(): Client {
+  if (!client) {
+    const url = process.env.TURSO_DATABASE_URL;
+    if (!url) throw new Error("TURSO_DATABASE_URL is not set");
+    client = createClient({ url, authToken: process.env.TURSO_AUTH_TOKEN });
   }
-  return db;
+  return client;
 }
 
-type Row = {
-  price: number;
-  surface: number;
-  rooms: number | null;
-  month: number;
-  price_m2: number;
-  adresse: string | null;
-  ville: string | null;
-};
-
-/** Compose a display address from the DVF street + commune. */
-function fullAddress(adresse: string | null, ville: string | null): string {
-  return [adresse, ville].filter(Boolean).join(", ");
-}
+const fullAddress = (adresse: unknown, ville: unknown) =>
+  [adresse, ville].filter(Boolean).join(", ");
 
 /** Closest recent sales to the subject (by surface) for a postal code + type. */
-export function queryDvfComparables(
+export async function queryDvfComparables(
   cp: string,
   propertyType: string,
   surface: number,
   limit = 25,
-): DvfComp[] {
+): Promise<DvfComp[]> {
   const type = /maison/i.test(propertyType) ? "M" : "A";
-  const rows = getDb()
-    .prepare(
-      `select price, surface, rooms, month, adresse, ville,
-              round(price * 1.0 / surface) as price_m2
-       from sales where cp = ? and type = ?
-       order by abs(surface - ?) limit ?`,
-    )
-    .all(cp, type, surface || 0, limit) as Row[];
+  const rs = await getClient().execute({
+    sql: `select price, surface, rooms, month, adresse, ville,
+                 round(price * 1.0 / surface) as price_m2
+          from sales where cp = ? and type = ?
+          order by abs(surface - ?) limit ?`,
+    args: [cp, type, surface || 0, limit],
+  });
 
   const label = type === "M" ? "Maison" : "Appartement";
-  return rows.map((r, i) => ({
+  return rs.rows.map((r, i) => ({
     id: `dvf-${cp}-${i}`,
-    soldOn: `2025-${String(r.month ?? 1).padStart(2, "0")}-01`,
+    soldOn: `2025-${String(Number(r.month) || 1).padStart(2, "0")}-01`,
     address: fullAddress(r.adresse, r.ville),
-    price: r.price,
-    surface: r.surface,
-    pricePerM2: r.price_m2,
-    rooms: r.rooms ?? null,
+    price: Number(r.price),
+    surface: Number(r.surface),
+    pricePerM2: Number(r.price_m2),
+    rooms: r.rooms == null ? null : Number(r.rooms),
     type: label,
   }));
 }
@@ -91,12 +76,12 @@ const SORT_COLUMNS: Record<string, string> = {
   month: "month",
 };
 
-export function searchDvf(p: DvfSearchParams): {
+export async function searchDvf(p: DvfSearchParams): Promise<{
   rows: DvfRow[];
   total: number;
   page: number;
   limit: number;
-} {
+}> {
   const where: string[] = [];
   const args: (string | number)[] = [];
   const num = (v: unknown) => (Number.isFinite(Number(v)) && Number(v) > 0 ? Number(v) : null);
@@ -130,16 +115,28 @@ export function searchDvf(p: DvfSearchParams): {
   const limit = Math.min(Math.max(p.limit ?? 50, 1), 200);
   const page = Math.max(p.page ?? 0, 0);
 
-  const db = getDb();
-  const total = (db.prepare(`select count(*) as n from sales ${clause}`).get(...args) as { n: number }).n;
-  const raw = db
-    .prepare(
-      `select cp, ville, adresse, type, price, surface,
-              round(price * 1.0 / surface) as priceM2, rooms, month
-       from sales ${clause} order by ${sortCol} ${order} limit ? offset ?`,
-    )
-    .all(...args, limit, page * limit) as Array<Omit<DvfRow, "type"> & { type: string }>;
+  const db = getClient();
+  const [countRs, rowsRs] = await Promise.all([
+    db.execute({ sql: `select count(*) as n from sales ${clause}`, args }),
+    db.execute({
+      sql: `select cp, ville, adresse, type, price, surface,
+                   round(price * 1.0 / surface) as priceM2, rooms, month
+            from sales ${clause} order by ${sortCol} ${order} limit ? offset ?`,
+      args: [...args, limit, page * limit],
+    }),
+  ]);
 
-  const rows: DvfRow[] = raw.map((r) => ({ ...r, type: r.type === "M" ? "Maison" : "Appartement" }));
+  const total = Number(countRs.rows[0].n);
+  const rows: DvfRow[] = rowsRs.rows.map((r) => ({
+    cp: String(r.cp),
+    ville: r.ville == null ? null : String(r.ville),
+    adresse: r.adresse == null ? null : String(r.adresse),
+    type: r.type === "M" ? "Maison" : "Appartement",
+    price: Number(r.price),
+    surface: Number(r.surface),
+    priceM2: Number(r.priceM2),
+    rooms: r.rooms == null ? null : Number(r.rooms),
+    month: Number(r.month),
+  }));
   return { rows, total, page, limit };
 }

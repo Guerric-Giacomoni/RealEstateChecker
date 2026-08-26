@@ -22,7 +22,7 @@ export async function GET(request: Request) {
     limit: Number(q.get("limit")) || 50,
   };
   try {
-    return Response.json(searchDvf(params));
+    return Response.json(await searchDvf(params));
   } catch (e) {
     console.error("[dvf/search]", e);
     return Response.json({ rows: [], total: 0, page: 0, limit: 50 }, { status: 500 });
