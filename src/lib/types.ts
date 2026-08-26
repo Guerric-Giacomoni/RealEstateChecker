@@ -64,6 +64,8 @@ export type Comparable = {
 /** One row in the DVF explorer table. */
 export type DvfRow = {
   cp: string;
+  ville: string | null;
+  adresse: string | null;
   type: string; // "Appartement" | "Maison"
   price: number;
   surface: number;
@@ -76,6 +78,7 @@ export type DvfRow = {
 export type DvfComp = {
   id: string;
   soldOn: string; // ISO-ish "2025-MM-01"
+  address: string; // "12 rue X, Ville" (may be empty)
   price: number;
   surface: number;
   pricePerM2: number;

@@ -28,6 +28,7 @@ const EMPTY: Filters = {
 const fr = (n: number) => n.toLocaleString("fr-FR");
 
 const COLS: { key: string; label: string; sort?: string; align?: "right" }[] = [
+  { key: "adresse", label: "Adresse" },
   { key: "cp", label: "Code postal" },
   { key: "type", label: "Type" },
   { key: "price", label: "Prix", sort: "price", align: "right" },
@@ -187,6 +188,11 @@ export default function DvfExplorer() {
             <tbody>
               {rows.map((r, i) => (
                 <tr key={i} className="border-b border-line/60 transition hover:bg-slate-50/70">
+                  <td className="px-3 py-2 text-slate-600">
+                    <span className="block max-w-[260px] truncate">
+                      {[r.adresse, r.ville].filter(Boolean).join(", ") || "—"}
+                    </span>
+                  </td>
                   <td className="px-3 py-2 text-slate-600">{r.cp}</td>
                   <td className="px-3 py-2 text-slate-600">{r.type}</td>
                   <td className="px-3 py-2 text-right font-semibold text-ink">{fr(r.price)} €</td>

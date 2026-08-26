@@ -40,6 +40,8 @@ con.execute(
                cast(surface_reelle_bati as double) as surface,
                try_cast(nombre_pieces_principales as integer) as rooms,
                cast(strftime(date_mutation, '%m') as integer) as month,
+               nullif(trim(concat_ws(' ', adresse_numero, adresse_suffixe, adresse_nom_voie)), '') as adresse,
+               nom_commune as ville,
                id_mutation
         from read_csv('{CSV}', quote='"', escape='"', ignore_errors=true)
         where nature_mutation = 'Vente'
@@ -51,7 +53,7 @@ con.execute(
     select cp, type,
            cast(b.price as integer) as price,
            cast(b.surface as integer) as surface,
-           rooms, month
+           rooms, month, adresse, ville
     from base b join single s using (id_mutation)
     where b.price / b.surface between 200 and 30000
     """

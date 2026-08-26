@@ -210,11 +210,14 @@ export function TabBien() {
           </p>
         ) : (
           <Table
-            head={["Date", "Prix", "Surface", "€/m²", "Pièces"]}
-            align={["left", "right", "right", "right", "right"]}
+            head={["Adresse", "Date", "Prix", "Surface", "€/m²", "Pièces"]}
+            align={["left", "left", "right", "right", "right", "right"]}
           >
             {saleComps.map((c) => (
               <tr key={c.id} className="transition hover:bg-slate-50/70">
+                <Td className="text-slate-600">
+                  <span className="block max-w-[220px] truncate">{c.address || "—"}</span>
+                </Td>
                 <Td>{monthYear(c.soldOn)}</Td>
                 <Td right strong>{eur(c.price)}</Td>
                 <Td right>{c.surface} m²</Td>

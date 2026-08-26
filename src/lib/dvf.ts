@@ -19,7 +19,20 @@ function getDb(): Database.Database {
   return db;
 }
 
-type Row = { price: number; surface: number; rooms: number | null; month: number; price_m2: number };
+type Row = {
+  price: number;
+  surface: number;
+  rooms: number | null;
+  month: number;
+  price_m2: number;
+  adresse: string | null;
+  ville: string | null;
+};
+
+/** Compose a display address from the DVF street + commune. */
+function fullAddress(adresse: string | null, ville: string | null): string {
+  return [adresse, ville].filter(Boolean).join(", ");
+}
 
 /** Closest recent sales to the subject (by surface) for a postal code + type. */
 export function queryDvfComparables(
@@ -31,7 +44,8 @@ export function queryDvfComparables(
   const type = /maison/i.test(propertyType) ? "M" : "A";
   const rows = getDb()
     .prepare(
-      `select price, surface, rooms, month, round(price * 1.0 / surface) as price_m2
+      `select price, surface, rooms, month, adresse, ville,
+              round(price * 1.0 / surface) as price_m2
        from sales where cp = ? and type = ?
        order by abs(surface - ?) limit ?`,
     )
@@ -41,6 +55,7 @@ export function queryDvfComparables(
   return rows.map((r, i) => ({
     id: `dvf-${cp}-${i}`,
     soldOn: `2025-${String(r.month ?? 1).padStart(2, "0")}-01`,
+    address: fullAddress(r.adresse, r.ville),
     price: r.price,
     surface: r.surface,
     pricePerM2: r.price_m2,
@@ -119,7 +134,8 @@ export function searchDvf(p: DvfSearchParams): {
   const total = (db.prepare(`select count(*) as n from sales ${clause}`).get(...args) as { n: number }).n;
   const raw = db
     .prepare(
-      `select cp, type, price, surface, round(price * 1.0 / surface) as priceM2, rooms, month
+      `select cp, ville, adresse, type, price, surface,
+              round(price * 1.0 / surface) as priceM2, rooms, month
        from sales ${clause} order by ${sortCol} ${order} limit ? offset ?`,
     )
     .all(...args, limit, page * limit) as Array<Omit<DvfRow, "type"> & { type: string }>;
