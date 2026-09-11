@@ -206,6 +206,24 @@ export function TabMarche() {
             legend={false}
             height={200}
           />
+          {marketStats && marketStats.ageBands.length > 0 && (
+            <div className="mt-4 border-t border-line pt-3">
+              <div className="mb-2 text-[11px] uppercase tracking-wide text-muted">
+                Répartition par âge
+              </div>
+              <div className="space-y-1.5">
+                {marketStats.ageBands.map((b) => (
+                  <div key={b.label}>
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-[12px] text-muted">{b.label} ans</span>
+                      <span className="tnum text-[12px] font-semibold text-ink">{pct(b.share, 0)}</span>
+                    </div>
+                    <Bar value={b.share} max={40} tone="info" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </Card>
 
         <Card>

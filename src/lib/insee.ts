@@ -39,9 +39,21 @@ function latestObs(obs: Obs[]): { year: number | null; rows: Obs[] } {
 const pickBy = (rows: Obs[], dim: string, code: string) =>
   rows.find((o) => o.dims[dim] === code)?.value ?? null;
 
+// INSEE's non-overlapping age bands for DS_RP_POPULATION_PRINC (they partition
+// the total). Codes are stable; labels are ours.
+const AGE_BANDS: [code: string, label: string][] = [
+  ["Y_LT15", "0–14"],
+  ["Y15T24", "15–24"],
+  ["Y25T39", "25–39"],
+  ["Y40T54", "40–54"],
+  ["Y55T64", "55–64"],
+  ["Y65T79", "65–79"],
+  ["Y_GE80", "80+"],
+];
+
 /** Population history + median income (vs France) for a commune. */
 export async function fetchMarketStats(code: string): Promise<MarketStats> {
-  const [pop, incomeCom, incomeFr, emp, housing] = await Promise.all([
+  const [pop, incomeCom, incomeFr, emp, housing, age] = await Promise.all([
     melodi("DS_POPULATIONS_HISTORIQUES", { GEO: `COM-${code}`, POPREF_MEASURE: "PMUN" }),
     melodi("DS_FILOSOFI_CC", { GEO: `COM-${code}`, FILOSOFI_MEASURE: "MED_SL" }),
     melodi("DS_FILOSOFI_CC", { GEO: "FRANCE", FILOSOFI_MEASURE: "MED_SL" }),
@@ -53,6 +65,8 @@ export async function fetchMarketStats(code: string): Promise<MarketStats> {
       RP_MEASURE: "DWELLINGS",
       CARS: "_T", BUILD_END: "_T", NRG_SRC: "_T", TDW: "_T", TSH: "_T", CARPARK: "_T", NOR: "_T", L_STAY: "_T",
     }),
+    // Age distribution (total sexes).
+    melodi("DS_RP_POPULATION_PRINC", { GEO: `COM-${code}`, SEX: "_T" }),
   ]);
 
   const byYear = new Map(pop.map((o) => [o.time, o.value]));
@@ -80,6 +94,15 @@ export async function fetchMarketStats(code: string): Promise<MarketStats> {
   const totalDw = pickBy(houseL.rows, "OCS", "_T");
   const vacancyRate = vacant && totalDw ? round1((vacant / totalDw) * 100) : null;
 
+  const ageL = latestObs(age);
+  const ageTotal = pickBy(ageL.rows, "AGE", "_T");
+  const ageBands = ageTotal
+    ? AGE_BANDS.flatMap(([c, label]) => {
+        const v = pickBy(ageL.rows, "AGE", c);
+        return v != null ? [{ label, share: round1((v / ageTotal) * 100) }] : [];
+      })
+    : [];
+
   return {
     codeInsee: code,
     population: {
@@ -97,6 +120,7 @@ export async function fetchMarketStats(code: string): Promise<MarketStats> {
     },
     unemployment: { rate: unemploymentRate, year: empL.year },
     housing: { vacancyRate, year: houseL.year },
+    ageBands,
   };
 }
 

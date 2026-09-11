@@ -152,6 +152,7 @@ export type MarketStats = {
   };
   unemployment: { rate: number | null; year: number | null };
   housing: { vacancyRate: number | null; year: number | null };
+  ageBands: { label: string; share: number }[];
 };
 
 export type MarketData = {
