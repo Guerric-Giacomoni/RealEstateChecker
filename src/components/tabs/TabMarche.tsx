@@ -6,7 +6,8 @@ import { Badge, Bar, Card, CardTitle, Insight, Row, Table, Td } from "../ui";
 import { BarChart, LineChart } from "../charts";
 
 export function TabMarche() {
-  const { a, d, market, comps, property, marketStats, marketLoading } = useApp();
+  const { a, d, market, comps, property, marketStats, marketLoading, risks, risksLoading } =
+    useApp();
 
   // Real INSEE figures when loaded, else the mock market.
   const pop = marketStats?.population;
@@ -15,6 +16,17 @@ export function TabMarche() {
   const hv = marketStats?.housing;
   const growthTone = (v?: number | null): "pos" | "neg" | undefined =>
     v == null ? undefined : v >= 0 ? "pos" : "neg";
+
+  const clayLevel = risks?.clay.level ?? null;
+  const clayTone: "good" | "warn" | "bad" = !clayLevel
+    ? "good"
+    : /fort/i.test(clayLevel)
+      ? "bad"
+      : /moyen/i.test(clayLevel)
+        ? "warn"
+        : "good";
+  const seismicNum = risks?.seismic.level ? parseInt(risks.seismic.level, 10) : 0;
+  const seismicTone: "good" | "warn" | "bad" = seismicNum >= 4 ? "bad" : seismicNum === 3 ? "warn" : "good";
 
   const hist = market.pricePerM2History;
   const last = hist[hist.length - 1].value;
@@ -275,6 +287,91 @@ export function TabMarche() {
           </p>
         </Card>
       </div>
+
+      {/* ---------------- Risques naturels ---------------- */}
+      <Card>
+        <CardTitle hint="Source : Géorisques — commune & environs (localisation approximative)">
+          Risques naturels
+        </CardTitle>
+
+        {risksLoading ? (
+          <div className="flex items-center gap-2.5 py-4 text-[13px] text-muted">
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-navy-200 border-t-navy-600" />
+            Analyse des risques…
+          </div>
+        ) : !risks ? (
+          <p className="text-[13px] text-muted">Risques indisponibles pour cette localisation.</p>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="rounded-lg bg-slate-50 px-3 py-2.5">
+                <div className="text-[10.5px] uppercase tracking-wide text-muted">Inondation</div>
+                <div className="mt-1">
+                  <Badge tone={risks.flood.communeRisk ? "bad" : "good"}>
+                    {risks.flood.communeRisk ? "Présent" : "Non recensé"}
+                  </Badge>
+                </div>
+                <div className="mt-1 text-[11px] text-faint">
+                  {risks.flood.catnatCount > 0
+                    ? `${risks.flood.catnatCount} arrêté${risks.flood.catnatCount > 1 ? "s" : ""} CatNat`
+                    : risks.flood.atlasNearby
+                      ? "zone connue à proximité"
+                      : "aucun historique"}
+                </div>
+              </div>
+              <div className="rounded-lg bg-slate-50 px-3 py-2.5">
+                <div className="text-[10.5px] uppercase tracking-wide text-muted">Argiles</div>
+                <div className="mt-1">
+                  <Badge tone={clayTone}>{clayLevel ?? "Faible ou nul"}</Badge>
+                </div>
+                <div className="mt-1 text-[11px] text-faint">retrait-gonflement</div>
+              </div>
+              <div className="rounded-lg bg-slate-50 px-3 py-2.5">
+                <div className="text-[10.5px] uppercase tracking-wide text-muted">Séisme</div>
+                <div className="mt-1">
+                  <Badge tone={seismicTone}>{risks.seismic.level ?? "—"}</Badge>
+                </div>
+                <div className="mt-1 text-[11px] text-faint">zonage sismique</div>
+              </div>
+            </div>
+
+            {risks.catnat.events.length > 0 && (
+              <div className="mt-4">
+                <div className="mb-1.5 text-[11px] uppercase tracking-wide text-muted">
+                  Arrêtés de catastrophe naturelle ({risks.catnat.total})
+                </div>
+                <div className="thin-scroll max-h-64 overflow-y-auto">
+                  <Table head={["Date", "Type"]} align={["left", "left"]}>
+                    {risks.catnat.events.map((e, i) => (
+                      <tr key={`${e.date}-${i}`} className="transition hover:bg-slate-50/70">
+                        <Td>{e.date}</Td>
+                        <Td>{e.label}</Td>
+                      </tr>
+                    ))}
+                  </Table>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-line pt-3">
+              {risks.reportUrl && (
+                <a
+                  href={risks.reportUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-lg border border-navy-200 bg-navy-50 px-3 py-1.5 text-[12.5px] font-semibold text-navy-600 transition hover:bg-navy-100"
+                >
+                  Télécharger le rapport officiel Géorisques ↗
+                </a>
+              )}
+              <span className="text-[11px] leading-relaxed text-faint">
+                Risques à l&apos;échelle de la commune / à proximité — ne remplace pas l&apos;état
+                des risques (ERP) à l&apos;adresse exacte.
+              </span>
+            </div>
+          </>
+        )}
+      </Card>
 
       {/* ---------------- Criminalité ---------------- */}
       <div className="grid gap-4 xl:grid-cols-[1fr_1.35fr]">

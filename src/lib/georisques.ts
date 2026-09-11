@@ -38,7 +38,8 @@ export async function fetchRisks(code: string, lat: number, lon: number): Promis
     .map((r) => r.libelle_risque_long)
     .filter((v): v is string => Boolean(v));
 
-  const catnatRows = (catnat?.data as { libelle_risque_jo?: string }[]) ?? [];
+  const catnatRows =
+    (catnat?.data as { libelle_risque_jo?: string; date_debut_evt?: string }[]) ?? [];
   const counts = new Map<string, number>();
   for (const r of catnatRows) {
     const k = r.libelle_risque_jo ?? "Autre";
@@ -48,11 +49,21 @@ export async function fetchRisks(code: string, lat: number, lon: number): Promis
     .map(([label, count]) => ({ label, count }))
     .sort((a, b) => b.count - a.count);
 
+  // Sortable key from a DD/MM/YYYY date.
+  const iso = (s: string) => {
+    const [d, m, y] = (s ?? "").split("/");
+    return y ? `${y}-${m}-${d}` : "";
+  };
+  const events = catnatRows
+    .map((r) => ({ label: r.libelle_risque_jo ?? "Autre", date: r.date_debut_evt ?? "" }))
+    .filter((e) => e.date)
+    .sort((a, b) => iso(b.date).localeCompare(iso(a.date)));
+
   const seismicData = (seismic?.data as { zone_sismicite?: string }[]) ?? [];
 
   return {
     communeRisks,
-    catnat: { total: catnatRows.length, byType },
+    catnat: { total: catnatRows.length, byType, events },
     flood: {
       communeRisk: communeRisks.some(isFlood),
       catnatCount: catnatRows.filter((r) => isFlood(r.libelle_risque_jo)).length,

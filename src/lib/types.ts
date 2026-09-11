@@ -140,7 +140,11 @@ export type Property = {
 /** Natural-risk summary for a commune / location, from Géorisques (V1). */
 export type GeoRisks = {
   communeRisks: string[];
-  catnat: { total: number; byType: { label: string; count: number }[] };
+  catnat: {
+    total: number;
+    byType: { label: string; count: number }[];
+    events: { label: string; date: string }[];
+  };
   flood: { communeRisk: boolean; catnatCount: number; atlasNearby: boolean };
   clay: { level: string | null };
   seismic: { level: string | null };
