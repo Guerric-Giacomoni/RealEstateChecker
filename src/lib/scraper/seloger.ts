@@ -60,6 +60,8 @@ export function mapSelogerItem(raw: unknown, url: string): ScrapeResult {
     // over districtGeoId (AD08 = whole commune → all of Paris).
     districtGeoId: str(item.marketInsightsPlaceId ?? loc.districtGeoId) ?? null,
     codeInsee: null, // resolved from postal code in the store
+    latitude: num(item.coordinates?.latitude) ?? null,
+    longitude: num(item.coordinates?.longitude) ?? null,
     scrapedOn: (str(item.scrapedAt) ?? new Date().toISOString()).slice(0, 10),
   };
 
@@ -205,6 +207,7 @@ type SelogerItem = {
   marketInsightsPlaceId?: string;
   features?: SelogerFeature[];
   locality?: { district?: string; districtGeoId?: string; city?: string; zipCode?: string };
+  coordinates?: { latitude?: number; longitude?: number };
   energyBalance?: {
     condition?: string;
     heatingSystem?: string;

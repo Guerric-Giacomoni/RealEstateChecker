@@ -131,7 +131,20 @@ export type Property = {
   districtGeoId: string | null;
   /** INSEE commune code (e.g. "75056") — key for local INSEE statistics. */
   codeInsee: string | null;
+  /** WGS84 coordinates — used for point-based Géorisques queries. */
+  latitude: number | null;
+  longitude: number | null;
   scrapedOn: string;
+};
+
+/** Natural-risk summary for a commune / location, from Géorisques (V1). */
+export type GeoRisks = {
+  communeRisks: string[];
+  catnat: { total: number; byType: { label: string; count: number }[] };
+  flood: { communeRisk: boolean; catnatCount: number; atlasNearby: boolean };
+  clay: { level: string | null };
+  seismic: { level: string | null };
+  reportUrl: string | null;
 };
 
 /** Local INSEE (Melodi) statistics for a commune. */

@@ -28,6 +28,8 @@ export const PROPERTY: Property = {
   },
   districtGeoId: null,
   codeInsee: "72181", // Le Mans
+  latitude: 48.0077,
+  longitude: 0.1984,
   scrapedOn: "2026-08-05",
 };
 

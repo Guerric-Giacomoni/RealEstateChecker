@@ -54,6 +54,8 @@ export function mapLeboncoinItem(raw: unknown, url: string): ScrapeResult {
     energy: { condition: null, heatingSystem: null, energySource: null },
     districtGeoId: null,
     codeInsee: null, // resolved from postal code in the store
+    latitude: null,
+    longitude: null,
     scrapedOn: new Date().toISOString().slice(0, 10),
   };
 

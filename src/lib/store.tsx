@@ -12,20 +12,47 @@ import {
 import { COMPARABLES, DEFAULTS, MARKET, PROPERTY, RENT_COMPARABLES } from "./mock";
 import { derive, scoreDeal, stats } from "./finance";
 import { startScrapeClient, pollScrapeClient, ScrapeClientError } from "./scrape-client";
-import type { Assumptions, Comparable, DvfComp, MarketStats, Profile, Property } from "./types";
+import type {
+  Assumptions,
+  Comparable,
+  DvfComp,
+  GeoRisks,
+  MarketStats,
+  Profile,
+  Property,
+} from "./types";
 
-/** Resolve an INSEE commune code from a postal code (+ city, to disambiguate). */
-async function resolveCodeInsee(postalCode: string, city: string): Promise<string | null> {
+type Commune = { code: string; lat: number | null; lon: number | null };
+
+/** Resolve INSEE code + centroid from a postal code (+ city, to disambiguate). */
+async function resolveCommune(postalCode: string, city: string): Promise<Commune | null> {
   try {
     const res = await fetch(
-      `https://geo.api.gouv.fr/communes?codePostal=${postalCode}&fields=nom,code&limit=20`,
+      `https://geo.api.gouv.fr/communes?codePostal=${postalCode}&fields=nom,code,centre&limit=20`,
     );
     if (!res.ok) return null;
-    const communes: { nom: string; code: string }[] = await res.json();
+    const communes: { nom: string; code: string; centre?: { coordinates: [number, number] } }[] =
+      await res.json();
     if (communes.length === 0) return null;
     const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[^a-z]/g, "");
-    const match = communes.find((c) => norm(c.nom) === norm(city));
-    return (match ?? communes[0]).code;
+    const c = communes.find((x) => norm(x.nom) === norm(city)) ?? communes[0];
+    const [lon, lat] = c.centre?.coordinates ?? [null, null];
+    return { code: c.code, lat, lon };
+  } catch {
+    return null;
+  }
+}
+
+async function resolveCodeInsee(postalCode: string, city: string): Promise<string | null> {
+  return (await resolveCommune(postalCode, city))?.code ?? null;
+}
+
+/** Fetch Géorisques natural-risk summary for a commune + point. */
+async function fetchRisks(code: string, lat: number, lon: number): Promise<GeoRisks | null> {
+  try {
+    const res = await fetch(`/api/georisques?codeInsee=${code}&lat=${lat}&lon=${lon}`);
+    if (!res.ok) return null;
+    return await res.json();
   } catch {
     return null;
   }
@@ -108,6 +135,10 @@ type Ctx = {
   marketStats: MarketStats | null;
   /** True while the INSEE lookup is in flight. */
   marketLoading: boolean;
+  /** Géorisques natural-risk summary for the property; null until loaded. */
+  risks: GeoRisks | null;
+  /** True while the Géorisques lookup is in flight. */
+  risksLoading: boolean;
   /**
    * Start scraping a listing URL. Resolves once the subject property is ready
    * (so the UI can advance); comparables keep loading in the background.
@@ -139,6 +170,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [saleCompsLoading, setSaleCompsLoading] = useState(false);
   const [marketStats, setMarketStats] = useState<MarketStats | null>(null);
   const [marketLoading, setMarketLoading] = useState(false);
+  const [risks, setRisks] = useState<GeoRisks | null>(null);
+  const [risksLoading, setRisksLoading] = useState(false);
   const [profile, setProfileState] = useState<Profile | null>(null);
   const [onboarded, setOnboarded] = useState(false);
   const [showOther, setShowOther] = useState(false);
@@ -257,6 +290,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       energy: { condition: null, heatingSystem: null, energySource: null },
       districtGeoId: null,
       codeInsee: entry.codeInsee ?? null,
+      latitude: null,
+      longitude: null,
       scrapedOn: new Date().toISOString().slice(0, 10),
     });
     // No comparables for a manual entry — clear the demo rows so the tables
@@ -340,6 +375,43 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
   }, [property.codeInsee, property.postalCode, property.city]);
 
+  // Géorisques: resolve the commune code + a point (property coords, else the
+  // commune centroid) then fetch the natural-risk summary.
+  useEffect(() => {
+    let cancelled = false;
+    const codeInsee = property.codeInsee;
+    const lat0 = property.latitude;
+    const lon0 = property.longitude;
+    const postalCode = property.postalCode;
+    const city = property.city;
+    (async () => {
+      let code = codeInsee;
+      let lat = lat0;
+      let lon = lon0;
+      if ((!code || lat == null || lon == null) && postalCode) {
+        const c = await resolveCommune(postalCode, city);
+        code = code ?? c?.code ?? null;
+        lat = lat ?? c?.lat ?? null;
+        lon = lon ?? c?.lon ?? null;
+      }
+      if (cancelled) return;
+      if (!code || lat == null || lon == null) {
+        setRisks(null);
+        setRisksLoading(false);
+        return;
+      }
+      setRisksLoading(true);
+      const r = await fetchRisks(code, lat, lon);
+      if (!cancelled) {
+        setRisks(r);
+        setRisksLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [property.codeInsee, property.latitude, property.longitude, property.postalCode, property.city]);
+
   const comps = useMemo(() => {
     // Sale stats come from real DVF sold transactions when available, else mock.
     const saleSource =
@@ -392,6 +464,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     saleCompsLoading,
     marketStats,
     marketLoading,
+    risks,
+    risksLoading,
     startScrape,
     applyManualEntry,
     comps,
