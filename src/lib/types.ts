@@ -150,6 +150,8 @@ export type MarketStats = {
     france: number | null;
     vsFrancePct: number | null;
   };
+  unemployment: { rate: number | null; year: number | null };
+  housing: { vacancyRate: number | null; year: number | null };
 };
 
 export type MarketData = {

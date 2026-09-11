@@ -11,6 +11,8 @@ export function TabMarche() {
   // Real INSEE figures when loaded, else the mock market.
   const pop = marketStats?.population;
   const inc = marketStats?.income;
+  const un = marketStats?.unemployment;
+  const hv = marketStats?.housing;
   const growthTone = (v?: number | null): "pos" | "neg" | undefined =>
     v == null ? undefined : v >= 0 ? "pos" : "neg";
 
@@ -237,19 +239,22 @@ export function TabMarche() {
           )}
           <div className="mt-3 space-y-2.5 border-t border-line pt-3">
             {[
-              { l: "Chômage — commune", v: market.unemployment, tone: "bad" as const },
-              { l: "Chômage — département", v: market.unemploymentDept, tone: "warn" as const },
-              { l: "Chômage — France", v: market.unemploymentFrance, tone: "info" as const },
+              { l: "Chômage (recensement)", v: un?.rate ?? market.unemployment, tone: "bad" as const },
+              { l: "Logements vacants", v: hv?.vacancyRate ?? vacancy, tone: "warn" as const },
             ].map((s) => (
               <div key={s.l}>
                 <div className="flex items-baseline justify-between">
                   <span className="text-[12.5px] text-muted">{s.l}</span>
                   <span className="tnum text-[12.5px] font-semibold text-ink">{pct(s.v)}</span>
                 </div>
-                <Bar value={s.v} max={12} tone={s.tone} />
+                <Bar value={s.v} max={15} tone={s.tone} />
               </div>
             ))}
           </div>
+          <p className="mt-2 text-[11px] leading-relaxed text-faint">
+            Chômage au sens du recensement (≠ taux BIT). « Logements vacants » = part du parc de
+            logements — indicateur de tension locative, et non le taux de vacance de votre bien.
+          </p>
         </Card>
       </div>
 
