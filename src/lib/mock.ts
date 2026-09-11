@@ -27,6 +27,7 @@ export const PROPERTY: Property = {
     energySource: "Gaz",
   },
   districtGeoId: null,
+  codeInsee: "72181", // Le Mans
   scrapedOn: "2026-08-05",
 };
 

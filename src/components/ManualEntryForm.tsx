@@ -14,7 +14,7 @@ type Commune = {
   codesPostaux?: string[];
   departement?: { code: string; nom: string };
 };
-type Place = { city: string; postalCode: string; department?: string };
+type Place = { city: string; postalCode: string; department?: string; codeInsee: string };
 
 async function searchCommunes(query: string): Promise<Commune[]> {
   const q = query.trim();
@@ -52,7 +52,7 @@ function CommuneAutocomplete({ onSelect }: { onSelect: (p: Place | null) => void
   const options = results.flatMap((c) => {
     const cp = byPostal ? query.trim() : c.codesPostaux?.[0];
     return cp
-      ? [{ city: c.nom, postalCode: cp, department: c.departement?.nom, key: `${c.code}-${cp}` }]
+      ? [{ city: c.nom, postalCode: cp, department: c.departement?.nom, codeInsee: c.code, key: `${c.code}-${cp}` }]
       : [];
   });
 
@@ -60,7 +60,7 @@ function CommuneAutocomplete({ onSelect }: { onSelect: (p: Place | null) => void
     setQuery(`${o.city} (${o.postalCode})`);
     setPicked(true);
     setOpen(false);
-    onSelect({ city: o.city, postalCode: o.postalCode, department: o.department });
+    onSelect({ city: o.city, postalCode: o.postalCode, department: o.department, codeInsee: o.codeInsee });
   };
 
   return (
@@ -158,6 +158,7 @@ export function ManualEntryForm({ onSuccess }: { onSuccess: () => void }) {
       city: place.city,
       postalCode: place.postalCode,
       department: place.department,
+      codeInsee: place.codeInsee,
     });
     onSuccess();
   };

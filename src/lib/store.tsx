@@ -12,7 +12,35 @@ import {
 import { COMPARABLES, DEFAULTS, MARKET, PROPERTY, RENT_COMPARABLES } from "./mock";
 import { derive, scoreDeal, stats } from "./finance";
 import { startScrapeClient, pollScrapeClient, ScrapeClientError } from "./scrape-client";
-import type { Assumptions, Comparable, DvfComp, Profile, Property } from "./types";
+import type { Assumptions, Comparable, DvfComp, MarketStats, Profile, Property } from "./types";
+
+/** Resolve an INSEE commune code from a postal code (+ city, to disambiguate). */
+async function resolveCodeInsee(postalCode: string, city: string): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `https://geo.api.gouv.fr/communes?codePostal=${postalCode}&fields=nom,code&limit=20`,
+    );
+    if (!res.ok) return null;
+    const communes: { nom: string; code: string }[] = await res.json();
+    if (communes.length === 0) return null;
+    const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[^a-z]/g, "");
+    const match = communes.find((c) => norm(c.nom) === norm(city));
+    return (match ?? communes[0]).code;
+  } catch {
+    return null;
+  }
+}
+
+/** Fetch INSEE market statistics for a commune code. */
+async function fetchMarketStats(code: string): Promise<MarketStats | null> {
+  try {
+    const res = await fetch(`/api/insee/${code}`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
 
 /** Fetch real past-sold comparables (DVF) for a postal code + type + surface. */
 async function fetchDvfComps(cp: string, type: string, surface: number): Promise<DvfComp[]> {
@@ -40,6 +68,7 @@ export type ManualEntry = {
   city: string;
   postalCode: string;
   department?: string;
+  codeInsee?: string;
   rooms?: number;
 };
 
@@ -75,6 +104,10 @@ type Ctx = {
   saleComps: DvfComp[];
   /** True while the DVF lookup is in flight. */
   saleCompsLoading: boolean;
+  /** Local INSEE statistics (population, income…) for the commune; null until loaded. */
+  marketStats: MarketStats | null;
+  /** True while the INSEE lookup is in flight. */
+  marketLoading: boolean;
   /**
    * Start scraping a listing URL. Resolves once the subject property is ready
    * (so the UI can advance); comparables keep loading in the background.
@@ -104,6 +137,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [rentComparablesLoading, setRentComparablesLoading] = useState(false);
   const [saleComps, setSaleComps] = useState<DvfComp[]>([]);
   const [saleCompsLoading, setSaleCompsLoading] = useState(false);
+  const [marketStats, setMarketStats] = useState<MarketStats | null>(null);
+  const [marketLoading, setMarketLoading] = useState(false);
   const [profile, setProfileState] = useState<Profile | null>(null);
   const [onboarded, setOnboarded] = useState(false);
   const [showOther, setShowOther] = useState(false);
@@ -221,6 +256,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       features: [],
       energy: { condition: null, heatingSystem: null, energySource: null },
       districtGeoId: null,
+      codeInsee: entry.codeInsee ?? null,
       scrapedOn: new Date().toISOString().slice(0, 10),
     });
     // No comparables for a manual entry — clear the demo rows so the tables
@@ -277,6 +313,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return () => clearTimeout(t);
   }, [property.postalCode, property.type, a.surface]);
 
+  // Local INSEE stats: resolve the commune's INSEE code (from the property or
+  // its postal code + city) then fetch population + income.
+  useEffect(() => {
+    let cancelled = false;
+    const codeInsee = property.codeInsee;
+    const postalCode = property.postalCode;
+    const city = property.city;
+    (async () => {
+      const code = codeInsee ?? (postalCode ? await resolveCodeInsee(postalCode, city) : null);
+      if (cancelled) return;
+      if (!code) {
+        setMarketStats(null);
+        setMarketLoading(false);
+        return;
+      }
+      setMarketLoading(true);
+      const stats = await fetchMarketStats(code);
+      if (!cancelled) {
+        setMarketStats(stats);
+        setMarketLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [property.codeInsee, property.postalCode, property.city]);
+
   const comps = useMemo(() => {
     // Sale stats come from real DVF sold transactions when available, else mock.
     const saleSource =
@@ -327,6 +390,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     rentComparablesLoading,
     saleComps,
     saleCompsLoading,
+    marketStats,
+    marketLoading,
     startScrape,
     applyManualEntry,
     comps,

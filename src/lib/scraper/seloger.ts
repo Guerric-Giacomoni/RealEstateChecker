@@ -59,6 +59,7 @@ export function mapSelogerItem(raw: unknown, url: string): ScrapeResult {
     // marketInsightsPlaceId (neighbourhood in dense cities, commune elsewhere)
     // over districtGeoId (AD08 = whole commune → all of Paris).
     districtGeoId: str(item.marketInsightsPlaceId ?? loc.districtGeoId) ?? null,
+    codeInsee: null, // resolved from postal code in the store
     scrapedOn: (str(item.scrapedAt) ?? new Date().toISOString()).slice(0, 10),
   };
 

@@ -6,7 +6,13 @@ import { Badge, Bar, Card, CardTitle, Insight, Row, Table, Td } from "../ui";
 import { BarChart, LineChart } from "../charts";
 
 export function TabMarche() {
-  const { a, d, market, comps, property } = useApp();
+  const { a, d, market, comps, property, marketStats, marketLoading } = useApp();
+
+  // Real INSEE figures when loaded, else the mock market.
+  const pop = marketStats?.population;
+  const inc = marketStats?.income;
+  const growthTone = (v?: number | null): "pos" | "neg" | undefined =>
+    v == null ? undefined : v >= 0 ? "pos" : "neg";
 
   const hist = market.pricePerM2History;
   const last = hist[hist.length - 1].value;
@@ -185,9 +191,14 @@ export function TabMarche() {
       {/* ---------------- Population & économie ---------------- */}
       <div className="grid gap-4 xl:grid-cols-[1.35fr_1fr]">
         <Card>
-          <CardTitle hint="Recensement INSEE">Population</CardTitle>
+          <CardTitle hint={pop ? `Recensement INSEE — ${pop.year}` : "Recensement INSEE"}>
+            Population {marketLoading && !pop ? "…" : ""}
+          </CardTitle>
           <LineChart
-            data={market.populationHistory.map((p) => ({ label: p.label, value: p.value }))}
+            data={(pop?.history ?? market.populationHistory).map((p) => ({
+              label: p.label,
+              value: p.value,
+            }))}
             series={[{ key: "value", label: "Habitants", color: "#3765a5", area: true }]}
             yFormat={(v) => int(v)}
             legend={false}
@@ -196,14 +207,34 @@ export function TabMarche() {
         </Card>
 
         <Card>
-          <CardTitle hint="Commune vs département vs France">Économie locale</CardTitle>
-          <Row label="Population" value={int(market.population)} />
-          <Row label="Croissance 5 ans" value={pct(market.populationGrowth5y)} tone="pos" />
+          <CardTitle hint="INSEE Melodi (commune)">Économie locale</CardTitle>
+          <Row label="Population" hint={pop ? String(pop.year) : undefined} value={int(pop?.latest ?? market.population)} />
+          <Row
+            label="Croissance 5 ans"
+            value={pct(pop?.change5y ?? market.populationGrowth5y)}
+            tone={growthTone(pop?.change5y ?? market.populationGrowth5y)}
+          />
+          {pop?.change10y != null && (
+            <Row label="Croissance 10 ans" value={pct(pop.change10y)} tone={growthTone(pop.change10y)} />
+          )}
           <Row label="Ménages" value={int(market.households)} />
           <Row label="Croissance des ménages" value={pct(market.householdGrowth)} tone="pos" />
           <Row label="Part de locataires" value={pct(market.tenantShare, 0)} />
-          <Row label="Revenu médian" value={eur(market.medianIncome)} divider />
-          <Row label="Revenu médian — département" value={eur(market.medianIncomeDept)} />
+          <Row
+            label="Revenu médian"
+            hint={inc?.year ? `niveau de vie ${inc.year}` : undefined}
+            value={eur(inc?.median ?? market.medianIncome)}
+            divider
+          />
+          {inc?.france != null ? (
+            <Row
+              label="Revenu médian — France"
+              value={`${eur(inc.france)}${inc.vsFrancePct != null ? ` (${inc.vsFrancePct > 0 ? "+" : ""}${pct(inc.vsFrancePct)})` : ""}`}
+              tone={growthTone(inc.vsFrancePct)}
+            />
+          ) : (
+            <Row label="Revenu médian — département" value={eur(market.medianIncomeDept)} />
+          )}
           <div className="mt-3 space-y-2.5 border-t border-line pt-3">
             {[
               { l: "Chômage — commune", v: market.unemployment, tone: "bad" as const },

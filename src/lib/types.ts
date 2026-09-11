@@ -129,7 +129,27 @@ export type Property = {
    * source doesn't provide it.
    */
   districtGeoId: string | null;
+  /** INSEE commune code (e.g. "75056") — key for local INSEE statistics. */
+  codeInsee: string | null;
   scrapedOn: string;
+};
+
+/** Local INSEE (Melodi) statistics for a commune. */
+export type MarketStats = {
+  codeInsee: string;
+  population: {
+    latest: number;
+    year: number;
+    change5y: number | null;
+    change10y: number | null;
+    history: { label: string; value: number }[];
+  };
+  income: {
+    median: number | null;
+    year: number | null;
+    france: number | null;
+    vsFrancePct: number | null;
+  };
 };
 
 export type MarketData = {
