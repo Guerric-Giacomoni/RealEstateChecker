@@ -341,11 +341,12 @@ export function TabMarche() {
                   Arrêtés de catastrophe naturelle ({risks.catnat.total})
                 </div>
                 <div className="thin-scroll max-h-64 overflow-y-auto">
-                  <Table head={["Date", "Type"]} align={["left", "left"]}>
+                  <Table head={["Période", "Type", "Publié"]} align={["left", "left", "left"]}>
                     {risks.catnat.events.map((e, i) => (
-                      <tr key={`${e.date}-${i}`} className="transition hover:bg-slate-50/70">
-                        <Td>{e.date}</Td>
+                      <tr key={`${e.start}-${i}`} className="transition hover:bg-slate-50/70">
+                        <Td>{e.end && e.end !== e.start ? `${e.start} → ${e.end}` : e.start}</Td>
                         <Td>{e.label}</Td>
+                        <Td>{e.published || "—"}</Td>
                       </tr>
                     ))}
                   </Table>

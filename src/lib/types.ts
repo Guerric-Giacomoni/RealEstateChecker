@@ -143,7 +143,7 @@ export type GeoRisks = {
   catnat: {
     total: number;
     byType: { label: string; count: number }[];
-    events: { label: string; date: string }[];
+    events: { label: string; start: string; end: string; published: string }[];
   };
   flood: { communeRisk: boolean; catnatCount: number; atlasNearby: boolean };
   clay: { level: string | null };

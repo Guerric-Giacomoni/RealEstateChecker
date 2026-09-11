@@ -39,7 +39,12 @@ export async function fetchRisks(code: string, lat: number, lon: number): Promis
     .filter((v): v is string => Boolean(v));
 
   const catnatRows =
-    (catnat?.data as { libelle_risque_jo?: string; date_debut_evt?: string }[]) ?? [];
+    (catnat?.data as {
+      libelle_risque_jo?: string;
+      date_debut_evt?: string;
+      date_fin_evt?: string;
+      date_publication_arrete?: string;
+    }[]) ?? [];
   const counts = new Map<string, number>();
   for (const r of catnatRows) {
     const k = r.libelle_risque_jo ?? "Autre";
@@ -55,9 +60,14 @@ export async function fetchRisks(code: string, lat: number, lon: number): Promis
     return y ? `${y}-${m}-${d}` : "";
   };
   const events = catnatRows
-    .map((r) => ({ label: r.libelle_risque_jo ?? "Autre", date: r.date_debut_evt ?? "" }))
-    .filter((e) => e.date)
-    .sort((a, b) => iso(b.date).localeCompare(iso(a.date)));
+    .map((r) => ({
+      label: r.libelle_risque_jo ?? "Autre",
+      start: r.date_debut_evt ?? "",
+      end: r.date_fin_evt ?? "",
+      published: r.date_publication_arrete ?? "",
+    }))
+    .filter((e) => e.start)
+    .sort((a, b) => iso(b.start).localeCompare(iso(a.start)));
 
   const seismicData = (seismic?.data as { zone_sismicite?: string }[]) ?? [];
 
