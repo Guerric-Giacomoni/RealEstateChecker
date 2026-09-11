@@ -31,6 +31,11 @@
   --color-pos: #0f766e;
   --color-pos-soft: #eefaf7;
 
+  /* Marker for placeholder / demo data still shown in the UI. */
+  --color-pink-100: #fce7f3;
+  --color-pink-500: #ec4899;
+  --color-pink-600: #db2777;
+
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 

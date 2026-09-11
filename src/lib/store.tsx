@@ -15,6 +15,7 @@ import { startScrapeClient, pollScrapeClient, ScrapeClientError } from "./scrape
 import type {
   Assumptions,
   Comparable,
+  CrimeStats,
   DvfComp,
   GeoRisks,
   MarketStats,
@@ -62,6 +63,17 @@ async function fetchRisks(code: string, lat: number, lon: number): Promise<GeoRi
 async function fetchMarketStats(code: string): Promise<MarketStats | null> {
   try {
     const res = await fetch(`/api/insee/${code}`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+/** Fetch SSMSI delinquency statistics for a commune code. */
+async function fetchCrime(code: string): Promise<CrimeStats | null> {
+  try {
+    const res = await fetch(`/api/crime/${code}`);
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -135,6 +147,10 @@ type Ctx = {
   marketStats: MarketStats | null;
   /** True while the INSEE lookup is in flight. */
   marketLoading: boolean;
+  /** SSMSI delinquency statistics for the commune; null until loaded / unavailable. */
+  crime: CrimeStats | null;
+  /** True while the SSMSI lookup is in flight. */
+  crimeLoading: boolean;
   /** Géorisques natural-risk summary for the property; null until loaded. */
   risks: GeoRisks | null;
   /** True while the Géorisques lookup is in flight. */
@@ -170,6 +186,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [saleCompsLoading, setSaleCompsLoading] = useState(false);
   const [marketStats, setMarketStats] = useState<MarketStats | null>(null);
   const [marketLoading, setMarketLoading] = useState(false);
+  const [crime, setCrime] = useState<CrimeStats | null>(null);
+  const [crimeLoading, setCrimeLoading] = useState(false);
   const [risks, setRisks] = useState<GeoRisks | null>(null);
   const [risksLoading, setRisksLoading] = useState(false);
   const [profile, setProfileState] = useState<Profile | null>(null);
@@ -361,14 +379,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (!code) {
         setMarketStats(null);
         setMarketLoading(false);
+        setCrime(null);
+        setCrimeLoading(false);
         return;
       }
       setMarketLoading(true);
-      const stats = await fetchMarketStats(code);
-      if (!cancelled) {
+      setCrimeLoading(true);
+      fetchMarketStats(code).then((stats) => {
+        if (cancelled) return;
         setMarketStats(stats);
         setMarketLoading(false);
-      }
+      });
+      fetchCrime(code).then((c) => {
+        if (cancelled) return;
+        setCrime(c);
+        setCrimeLoading(false);
+      });
     })();
     return () => {
       cancelled = true;
@@ -464,6 +490,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     saleCompsLoading,
     marketStats,
     marketLoading,
+    crime,
+    crimeLoading,
     risks,
     risksLoading,
     startScrape,

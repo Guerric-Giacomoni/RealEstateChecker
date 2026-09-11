@@ -498,6 +498,33 @@ export function Insight({ children, tone = "info" }: { children: ReactNode; tone
   );
 }
 
+/**
+ * Marks a value that is still placeholder/demo data (not yet wired to a real
+ * source). Rendered in pink so it's obvious at a glance what isn't real yet.
+ */
+export function Mock({ children }: { children: ReactNode }) {
+  return (
+    <span
+      className="text-pink-500"
+      title="Donnée d'exemple — pas encore reliée à une source réelle"
+    >
+      {children}
+    </span>
+  );
+}
+
+/** Pink "Exemple" pill for a whole card/chart that is still demo data. */
+export function MockBadge() {
+  return (
+    <span
+      className="rounded-full bg-pink-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-pink-600"
+      title="Contenu d'exemple — pas encore relié à une source réelle"
+    >
+      Exemple
+    </span>
+  );
+}
+
 export function Empty({ children }: { children: ReactNode }) {
   return (
     <div className="rounded-xl border border-dashed border-line px-4 py-8 text-center text-[13px] text-faint">

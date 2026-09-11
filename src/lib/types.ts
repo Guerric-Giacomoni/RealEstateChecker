@@ -151,6 +151,22 @@ export type GeoRisks = {
   reportUrl: string | null;
 };
 
+/** Delinquency statistics for a commune, from SSMSI (data.gouv). */
+export type CrimeStats = {
+  year: number;
+  /** Composite "faits pour 1 000 habitants" — sum of the shown categories. */
+  index: { commune: number; dept: number; france: number };
+  /** Commune composite index per year. */
+  history: { label: string; value: number }[];
+  categories: {
+    label: string;
+    value: number; // commune rate /1000
+    dept: number;
+    france: number;
+    trend: number; // commune YoY change, %
+  }[];
+};
+
 /** Local INSEE (Melodi) statistics for a commune. */
 export type MarketStats = {
   codeInsee: string;

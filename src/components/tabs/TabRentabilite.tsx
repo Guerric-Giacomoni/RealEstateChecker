@@ -16,6 +16,8 @@ import {
   Card,
   CardTitle,
   Insight,
+  Mock,
+  MockBadge,
   Row,
   SectionHeading,
   Stat,
@@ -668,7 +670,9 @@ function RentalMarket() {
   return (
     <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
       <Card>
-        <CardTitle hint="Loyer moyen au m² et taux de vacance">Marché locatif local</CardTitle>
+        <CardTitle hint="Loyer moyen au m² et taux de vacance" right={<MockBadge />}>
+          Marché locatif local
+        </CardTitle>
         <LineChart
           data={market.rentPerM2History.map((p, i) => ({
             label: p.label,
@@ -685,7 +689,9 @@ function RentalMarket() {
       </Card>
 
       <Card>
-        <CardTitle hint="Indicateurs de demande locative">Tension du marché</CardTitle>
+        <CardTitle hint="Indicateurs de demande locative" right={<MockBadge />}>
+          Tension du marché
+        </CardTitle>
         <div className="space-y-1">
           {market.rentalDemand.map((r) => (
             <div key={r.label} className="flex items-center justify-between py-1.5">
@@ -695,10 +701,10 @@ function RentalMarket() {
           ))}
         </div>
         <div className="mt-4 border-t border-line pt-3">
-          <Row label="Population" value={int(market.population)} />
-          <Row label="Croissance 5 ans" value={pct(market.populationGrowth5y)} tone="pos" />
-          <Row label="Revenu médian" value={eur(market.medianIncome)} />
-          <Row label="Chômage" value={pct(market.unemployment)} tone="neg" />
+          <Row label="Population" value={<Mock>{int(market.population)}</Mock>} />
+          <Row label="Croissance 5 ans" value={<Mock>{pct(market.populationGrowth5y)}</Mock>} />
+          <Row label="Revenu médian" value={<Mock>{eur(market.medianIncome)}</Mock>} />
+          <Row label="Chômage" value={<Mock>{pct(market.unemployment)}</Mock>} />
         </div>
       </Card>
     </div>

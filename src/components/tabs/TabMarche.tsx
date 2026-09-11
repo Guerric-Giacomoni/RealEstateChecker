@@ -1,13 +1,15 @@
 "use client";
 
 import { useApp } from "@/lib/store";
-import { dist, eur, eurM2, int, monthYear, num, pct } from "@/lib/format";
-import { Badge, Bar, Card, CardTitle, Insight, Row, Table, Td } from "../ui";
-import { BarChart, LineChart } from "../charts";
+import { eur, eurM2, int, monthYear, num, pct } from "@/lib/format";
+import { Badge, Bar, Card, CardTitle, Insight, Mock, MockBadge, Row, Table, Td } from "../ui";
+import { BarChart, LineChart, ScatterStrip } from "../charts";
 
 export function TabMarche() {
-  const { a, d, market, comps, property, marketStats, marketLoading, risks, risksLoading } =
+  const { a, d, market, comps, property, saleComps, saleCompsLoading, marketStats, marketLoading, crime, crimeLoading, risks, risksLoading } =
     useApp();
+
+  const perM2 = saleComps.map((c) => c.pricePerM2);
 
   // Real INSEE figures when loaded, else the mock market.
   const pop = marketStats?.population;
@@ -40,7 +42,6 @@ export function TabMarche() {
   const rentY5 = rentHist[rentHist.length - 6].value;
 
   const vacancy = market.vacancyHistory[market.vacancyHistory.length - 1].value;
-  const byDate = [...market.saleComps].sort((x, y) => (x.date < y.date ? 1 : -1));
 
   return (
     <div className="space-y-4">
@@ -59,14 +60,16 @@ export function TabMarche() {
           </div>
           <div className="ml-auto grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
-              { l: "Prix médian /m²", v: eurM2(comps.salePerM2.median) },
-              { l: "Loyer moyen /m²", v: `${num(rentLast)} €` },
-              { l: "Vacance", v: pct(vacancy) },
-              { l: "Transactions /an", v: int(market.transactionVolume) },
+              { l: "Prix médian /m²", v: eurM2(comps.salePerM2.median), mock: false },
+              { l: "Loyer moyen /m²", v: `${num(rentLast)} €`, mock: true },
+              { l: "Vacance", v: pct(vacancy), mock: true },
+              { l: "Transactions /an", v: int(market.transactionVolume), mock: true },
             ].map((s) => (
               <div key={s.l} className="rounded-lg bg-slate-50 px-3.5 py-2.5">
                 <div className="text-[10.5px] uppercase tracking-wide text-muted">{s.l}</div>
-                <div className="tnum mt-0.5 text-[16px] font-semibold text-ink">{s.v}</div>
+                <div className="tnum mt-0.5 text-[16px] font-semibold text-ink">
+                  {s.mock ? <Mock>{s.v}</Mock> : s.v}
+                </div>
               </div>
             ))}
           </div>
@@ -76,7 +79,7 @@ export function TabMarche() {
       {/* ---------------- Marché immobilier ---------------- */}
       <div className="grid gap-4 xl:grid-cols-[1.35fr_1fr]">
         <Card>
-          <CardTitle hint={`Prix moyen au m² — ${property.city}`}>
+          <CardTitle hint={`Prix moyen au m² — ${property.city}`} right={<MockBadge />}>
             Évolution des prix de vente
           </CardTitle>
           <LineChart
@@ -118,7 +121,7 @@ export function TabMarche() {
             tone={comps.priceVsComps > 0 ? "neg" : "pos"}
             strong
           />
-          <Row label="Volume de transactions" hint="12 derniers mois" value={int(market.transactionVolume)} />
+          <Row label="Volume de transactions" hint="12 derniers mois" value={<Mock>{int(market.transactionVolume)}</Mock>} />
           <div className="mt-3">
             <Insight tone={comps.priceVsComps > 5 ? "warn" : "good"}>
               À la médiane du secteur, ce bien de {a.surface} m² vaudrait{" "}
@@ -131,41 +134,94 @@ export function TabMarche() {
         </Card>
       </div>
 
-      {/* ---------------- Ventes comparables ---------------- */}
+      {/* ---------------- Ventes comparables (DVF, réel) ---------------- */}
       <Card>
-        <CardTitle hint="Base DVF — mutations à titre onéreux, rayon 600 m">
-          Ventes comparables récentes
-        </CardTitle>
-        <Table
-          head={["Date", "Prix", "Surface", "€/m²", "Pièces", "DPE", "Distance", "vs ce bien"]}
-          align={["left", "right", "right", "right", "right", "left", "right", "right"]}
+        <CardTitle
+          hint={
+            saleComps.length
+              ? `${saleComps.length} ventes réelles (DVF 2025) — même code postal`
+              : "Ventes réelles enregistrées (DVF 2025)"
+          }
+          right={
+            <Badge tone={comps.priceVsComps > 3 ? "bad" : comps.priceVsComps < -3 ? "good" : "warn"}>
+              {comps.priceVsComps > 0 ? "+" : ""}
+              {pct(comps.priceVsComps)} vs marché
+            </Badge>
+          }
         >
-          {byDate.map((c) => {
-            const ppm = c.price / c.surface;
-            const delta = (ppm / d.pricePerM2 - 1) * 100;
-            return (
+          Ventes comparables
+        </CardTitle>
+
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            { l: "Prix médian /m²", v: eurM2(comps.salePerM2.median) },
+            { l: "Prix moyen /m²", v: eurM2(comps.salePerM2.avg) },
+            { l: "Ce bien /m²", v: eurM2(d.pricePerM2) },
+            { l: "Fourchette", v: `${int(comps.salePerM2.min)} – ${int(comps.salePerM2.max)} €` },
+          ].map((s) => (
+            <div key={s.l} className="rounded-lg bg-slate-50 px-3 py-2.5">
+              <div className="text-[10.5px] uppercase tracking-wide text-muted">{s.l}</div>
+              <div className="tnum mt-0.5 text-[15px] font-semibold text-ink">{s.v}</div>
+            </div>
+          ))}
+        </div>
+
+        <ScatterStrip
+          values={perM2}
+          subject={d.pricePerM2}
+          median={comps.salePerM2.median}
+          format={(v) => `${int(v)} €`}
+        />
+
+        <div className="mb-4">
+          <Insight tone={comps.priceVsComps > 3 ? "warn" : "good"}>
+            Le prix affiché est{" "}
+            <strong>
+              {comps.priceVsComps > 0 ? "supérieur de " : "inférieur de "}
+              {pct(Math.abs(comps.priceVsComps))}
+            </strong>{" "}
+            au prix médian des ventes comparables. À la médiane du secteur, le bien se
+            négocierait autour de{" "}
+            <strong>{eur(comps.salePerM2.median * a.surface)}</strong>.
+          </Insight>
+        </div>
+
+        {saleCompsLoading ? (
+          <div className="flex items-center gap-2.5 py-4 text-[13px] text-muted">
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-navy-200 border-t-navy-600" />
+            Recherche des ventes récentes…
+          </div>
+        ) : saleComps.length === 0 ? (
+          <p className="text-[13px] text-muted">
+            Aucune vente enregistrée (DVF 2025) dans ce code postal.
+          </p>
+        ) : (
+          <Table
+            head={["Adresse", "Date", "Prix", "Surface", "€/m²", "Pièces"]}
+            align={["left", "left", "right", "right", "right", "right"]}
+          >
+            {saleComps.map((c) => (
               <tr key={c.id} className="transition hover:bg-slate-50/70">
-                <Td>{monthYear(c.date)}</Td>
+                <Td className="text-slate-600">
+                  <span className="block max-w-[220px] truncate">{c.address || "—"}</span>
+                </Td>
+                <Td>{monthYear(c.soldOn)}</Td>
                 <Td right strong>{eur(c.price)}</Td>
                 <Td right>{c.surface} m²</Td>
-                <Td right>{int(ppm)} €</Td>
-                <Td right>{c.rooms}</Td>
-                <Td>{c.dpe ? <Badge tone="neutral">{c.dpe}</Badge> : <span className="text-faint">—</span>}</Td>
-                <Td right>{dist(c.distance)}</Td>
-                <Td right className={delta >= 0 ? "!text-pos" : "!text-bad"}>
-                  {delta > 0 ? "+" : ""}
-                  {pct(delta)}
+                <Td right className={c.pricePerM2 > d.pricePerM2 ? "!text-pos" : "!text-bad"}>
+                  {int(c.pricePerM2)} €
                 </Td>
+                <Td right>{c.rooms ?? "—"}</Td>
               </tr>
-            );
-          })}
-        </Table>
+            ))}
+          </Table>
+        )}
       </Card>
 
       {/* ---------------- Marché locatif ---------------- */}
       <div className="grid gap-4 xl:grid-cols-[1.35fr_1fr]">
         <Card>
-          <CardTitle hint="Loyer moyen au m² et taux de vacance du parc">
+          <CardTitle hint="Loyer moyen au m² et taux de vacance du parc" right={<MockBadge />}>
             Marché locatif
           </CardTitle>
           <LineChart
@@ -187,11 +243,15 @@ export function TabMarche() {
           <CardTitle hint="Ce que disent les annonces">Indicateurs locatifs</CardTitle>
           <Row label="Loyer moyen /m²" value={`${num(comps.rentPerM2.avg)} €`} />
           <Row label="Loyer médian /m²" value={`${num(comps.rentPerM2.median)} €`} />
-          <Row label="Évolution 1 an" value={pct(((rentLast - rentY1) / rentY1) * 100)} tone="pos" />
-          <Row label="Évolution 5 ans" value={pct(((rentLast - rentY5) / rentY5) * 100)} tone="pos" />
-          <Row label="Taux de vacance" value={pct(vacancy)} tone={vacancy > 8 ? "neg" : undefined} />
-          <Row label="Annonces comparables" value={String(market.rentComps.length)} />
+          <Row label="Évolution 1 an" value={<Mock>{pct(((rentLast - rentY1) / rentY1) * 100)}</Mock>} />
+          <Row label="Évolution 5 ans" value={<Mock>{pct(((rentLast - rentY5) / rentY5) * 100)}</Mock>} />
+          <Row label="Taux de vacance" value={<Mock>{pct(vacancy)}</Mock>} />
+          <Row label="Annonces comparables" value={<Mock>{String(market.rentComps.length)}</Mock>} />
           <div className="mt-3 space-y-1.5 border-t border-line pt-3">
+            <div className="mb-1 flex items-center gap-2">
+              <span className="text-[11px] uppercase tracking-wide text-muted">Tension locative</span>
+              <MockBadge />
+            </div>
             {market.rentalDemand.map((r) => (
               <div key={r.label} className="flex items-center justify-between">
                 <span className="text-[12.5px] text-muted">{r.label}</span>
@@ -249,9 +309,9 @@ export function TabMarche() {
           {pop?.change10y != null && (
             <Row label="Croissance 10 ans" value={pct(pop.change10y)} tone={growthTone(pop.change10y)} />
           )}
-          <Row label="Ménages" value={int(market.households)} />
-          <Row label="Croissance des ménages" value={pct(market.householdGrowth)} tone="pos" />
-          <Row label="Part de locataires" value={pct(market.tenantShare, 0)} />
+          <Row label="Ménages" value={<Mock>{int(market.households)}</Mock>} />
+          <Row label="Croissance des ménages" value={<Mock>{pct(market.householdGrowth)}</Mock>} />
+          <Row label="Part de locataires" value={<Mock>{pct(market.tenantShare, 0)}</Mock>} />
           <Row
             label="Revenu médian"
             hint={inc?.year ? `niveau de vie ${inc.year}` : undefined}
@@ -265,7 +325,7 @@ export function TabMarche() {
               tone={growthTone(inc.vsFrancePct)}
             />
           ) : (
-            <Row label="Revenu médian — département" value={eur(market.medianIncomeDept)} />
+            <Row label="Revenu médian — département" value={<Mock>{eur(market.medianIncomeDept)}</Mock>} />
           )}
           <div className="mt-3 space-y-2.5 border-t border-line pt-3">
             {[
@@ -374,76 +434,110 @@ export function TabMarche() {
         )}
       </Card>
 
-      {/* ---------------- Criminalité ---------------- */}
-      <div className="grid gap-4 xl:grid-cols-[1fr_1.35fr]">
+      {/* ---------------- Criminalité (SSMSI) ---------------- */}
+      {crimeLoading ? (
         <Card>
-          <CardTitle hint="Faits pour 1 000 habitants — indice global">Sécurité</CardTitle>
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { l: "Commune", v: market.crime.index, tone: "bad" },
-              { l: "Département", v: market.crime.dept, tone: "warn" },
-              { l: "France", v: market.crime.france, tone: "info" },
-            ].map((s) => (
-              <div key={s.l} className="rounded-lg bg-slate-50 px-3 py-2.5 text-center">
-                <div className="text-[10.5px] uppercase tracking-wide text-muted">{s.l}</div>
-                <div className="tnum mt-0.5 text-[19px] font-semibold text-ink">{s.v}</div>
-              </div>
-            ))}
+          <CardTitle hint="Faits pour 1 000 habitants — SSMSI">Sécurité</CardTitle>
+          <div className="flex items-center gap-2.5 py-4 text-[13px] text-muted">
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-navy-200 border-t-navy-600" />
+            Chargement des données de délinquance…
           </div>
-          <div className="mt-4">
-            <LineChart
-              data={market.crime.history.map((p) => ({ label: p.label, value: p.value }))}
-              series={[{ key: "value", label: "Indice", color: "#be123c" }]}
-              yFormat={(v) => String(Math.round(v))}
-              legend={false}
-              height={160}
-            />
-          </div>
-          <Insight tone="warn">
-            L&apos;indice communal est supérieur de{" "}
-            <strong>{pct(((market.crime.index - market.crime.france) / market.crime.france) * 100, 0)}</strong>{" "}
-            à la moyenne nationale, ce qui est courant pour une ville-centre de cette taille.
-          </Insight>
         </Card>
-
+      ) : !crime ? (
         <Card>
-          <CardTitle hint="Pour 1 000 habitants — commune vs département">
-            Détail par catégorie
-          </CardTitle>
-          <BarChart
-            data={market.crime.categories.map((c) => ({
-              label: c.label.length > 12 ? c.label.slice(0, 11) + "…" : c.label,
-              commune: c.value,
-              dept: c.dept,
-            }))}
-            series={[
-              { key: "commune", label: "Commune", color: "#1d4477" },
-              { key: "dept", label: "Département", color: "#8daed9" },
-            ]}
-            yFormat={(v) => num(v, 1)}
-            height={210}
-          />
-          <div className="mt-4">
-            <Table head={["Catégorie", "Commune", "Département", "Tendance 1 an"]} align={["left", "right", "right", "right"]}>
-              {market.crime.categories.map((c) => (
-                <tr key={c.label} className="transition hover:bg-slate-50/70">
-                  <Td strong>{c.label}</Td>
-                  <Td right>{num(c.value, 1)}</Td>
-                  <Td right>{num(c.dept, 1)}</Td>
-                  <Td right className={c.trend <= 0 ? "!text-pos" : "!text-bad"}>
-                    {c.trend > 0 ? "+" : ""}
-                    {pct(c.trend)}
-                  </Td>
-                </tr>
+          <CardTitle hint="Faits pour 1 000 habitants — SSMSI">Sécurité</CardTitle>
+          <p className="text-[13px] text-muted">
+            Données de délinquance non disponibles pour cette commune.
+          </p>
+        </Card>
+      ) : (
+        <div className="grid gap-4 xl:grid-cols-[1fr_1.35fr]">
+          <Card>
+            <CardTitle hint={`Faits pour 1 000 hab. — indice global (${crime.year})`}>
+              Sécurité
+            </CardTitle>
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { l: "Commune", v: crime.index.commune },
+                { l: "Département", v: crime.index.dept },
+                { l: "France", v: crime.index.france },
+              ].map((s) => (
+                <div key={s.l} className="rounded-lg bg-slate-50 px-3 py-2.5 text-center">
+                  <div className="text-[10.5px] uppercase tracking-wide text-muted">{s.l}</div>
+                  <div className="tnum mt-0.5 text-[19px] font-semibold text-ink">{num(s.v, 1)}</div>
+                </div>
               ))}
-            </Table>
-          </div>
-        </Card>
-      </div>
+            </div>
+            <div className="mt-4">
+              <LineChart
+                data={crime.history.map((p) => ({ label: p.label, value: p.value }))}
+                series={[{ key: "value", label: "Indice", color: "#be123c" }]}
+                yFormat={(v) => num(v, 0)}
+                legend={false}
+                height={160}
+              />
+            </div>
+            {crime.index.france > 0 &&
+              (() => {
+                const diff = (crime.index.commune / crime.index.france - 1) * 100;
+                return (
+                  <Insight tone={diff > 10 ? "warn" : "good"}>
+                    L&apos;indice communal est{" "}
+                    <strong>
+                      {diff >= 0 ? "supérieur de " : "inférieur de "}
+                      {pct(Math.abs(diff), 0)}
+                    </strong>{" "}
+                    à la moyenne nationale ({num(crime.index.france, 1)} faits/1 000 hab.).
+                  </Insight>
+                );
+              })()}
+          </Card>
+
+          <Card>
+            <CardTitle hint="Pour 1 000 habitants — commune vs département">
+              Détail par catégorie
+            </CardTitle>
+            <BarChart
+              data={crime.categories.map((c) => ({
+                label: c.label.length > 12 ? c.label.slice(0, 11) + "…" : c.label,
+                commune: c.value,
+                dept: c.dept,
+              }))}
+              series={[
+                { key: "commune", label: "Commune", color: "#1d4477" },
+                { key: "dept", label: "Département", color: "#8daed9" },
+              ]}
+              yFormat={(v) => num(v, 1)}
+              height={210}
+            />
+            <div className="mt-4">
+              <Table
+                head={["Catégorie", "Commune", "Dépt", "France", "Tendance 1 an"]}
+                align={["left", "right", "right", "right", "right"]}
+              >
+                {crime.categories.map((c) => (
+                  <tr key={c.label} className="transition hover:bg-slate-50/70">
+                    <Td strong>{c.label}</Td>
+                    <Td right>{num(c.value, 1)}</Td>
+                    <Td right>{num(c.dept, 1)}</Td>
+                    <Td right className="text-muted">{num(c.france, 1)}</Td>
+                    <Td right className={c.trend <= 0 ? "!text-pos" : "!text-bad"}>
+                      {c.trend > 0 ? "+" : ""}
+                      {pct(c.trend)}
+                    </Td>
+                  </tr>
+                ))}
+              </Table>
+            </div>
+          </Card>
+        </div>
+      )}
 
       {/* ---------------- Commodités ---------------- */}
       <Card>
-        <CardTitle hint="Nombre d'établissements autour du bien">Commodités à proximité</CardTitle>
+        <CardTitle hint="Nombre d'établissements autour du bien" right={<MockBadge />}>
+          Commodités à proximité
+        </CardTitle>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-8">
           {market.amenities.map((am) => (
             <div key={am.label} className="rounded-xl border border-line px-3 py-3 text-center">
