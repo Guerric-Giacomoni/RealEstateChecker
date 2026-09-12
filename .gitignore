@@ -41,5 +41,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# DVF SQLite is hosted on Turso, not committed
-data/*.sqlite
+# DVF data (SQLite + yearly CSVs) is hosted on Turso, not committed
+data/

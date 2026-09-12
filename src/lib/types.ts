@@ -151,6 +151,14 @@ export type GeoRisks = {
   reportUrl: string | null;
 };
 
+/** Yearly average sale price for a commune, from the DVF indicators dataset. */
+export type PriceHistory = {
+  codeInsee: string;
+  series: { year: number; priceM2: number; nMutations: number }[];
+  /** Number of recorded sales in the most recent year (transaction volume). */
+  latestVolume: number | null;
+};
+
 /** Delinquency statistics for a commune, from SSMSI (data.gouv). */
 export type CrimeStats = {
   year: number;

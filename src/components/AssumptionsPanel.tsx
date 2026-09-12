@@ -2,7 +2,7 @@
 
 import { useApp } from "@/lib/store";
 import { eur, eurM2, eurMonth, pct } from "@/lib/format";
-import { Badge, Card, Row } from "./ui";
+import { Badge, Card, DpeBadge, Row } from "./ui";
 
 export function PropertyCard() {
   const { property, a, d, comps } = useApp();
@@ -52,9 +52,9 @@ export function PropertyCard() {
           <span>🛏 {property.bedrooms} ch.</span>
           <span>🚪 {property.rooms} pièces</span>
           <span>📐 {a.surface} m²</span>
-          <Badge tone={property.dpe <= "D" ? "good" : property.dpe <= "E" ? "warn" : "bad"}>
-            DPE {property.dpe}
-          </Badge>
+          <span className="inline-flex items-center gap-1">
+            DPE <DpeBadge value={property.dpe} />
+          </span>
         </div>
 
         <Row label="Prix affiché" value={eur(a.purchasePrice)} strong />

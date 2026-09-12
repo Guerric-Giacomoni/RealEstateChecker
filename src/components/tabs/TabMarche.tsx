@@ -6,7 +6,7 @@ import { Badge, Bar, Card, CardTitle, Insight, Mock, MockBadge, Row, Table, Td }
 import { BarChart, LineChart, ScatterStrip } from "../charts";
 
 export function TabMarche() {
-  const { a, d, market, comps, property, saleComps, saleCompsLoading, marketStats, marketLoading, crime, crimeLoading, risks, risksLoading } =
+  const { a, d, market, comps, property, saleComps, saleCompsLoading, priceHistory, marketStats, marketLoading, crime, crimeLoading, risks, risksLoading } =
     useApp();
 
   const perM2 = saleComps.map((c) => c.pricePerM2);
@@ -30,11 +30,18 @@ export function TabMarche() {
   const seismicNum = risks?.seismic.level ? parseInt(risks.seismic.level, 10) : 0;
   const seismicTone: "good" | "warn" | "bad" = seismicNum >= 4 ? "bad" : seismicNum === 3 ? "warn" : "good";
 
-  const hist = market.pricePerM2History;
-  const last = hist[hist.length - 1].value;
-  const y1 = hist[hist.length - 2].value;
-  const y3 = hist[hist.length - 4].value;
-  const y5 = hist[hist.length - 6].value;
+  // Real yearly €/m² (DVF indicators) when available, else the mock series.
+  const realPrice = priceHistory && priceHistory.series.length >= 2 ? priceHistory.series : null;
+  const priceChart = realPrice
+    ? realPrice.map((p) => ({ label: String(p.year), value: p.priceM2 }))
+    : market.pricePerM2History.map((p) => ({ label: p.label, value: p.value }));
+  const pv = priceChart.map((p) => p.value);
+  const last = pv[pv.length - 1];
+  const y1 = pv[pv.length - 2] ?? last;
+  const y3 = pv[pv.length - 4] ?? pv[0];
+  const y5 = pv[pv.length - 6] ?? pv[0];
+  // Transaction volume — real (latest year's recorded sales) when available.
+  const txVolume = priceHistory?.latestVolume ?? null;
 
   const rentHist = market.rentPerM2History;
   const rentLast = rentHist[rentHist.length - 1].value;
@@ -63,7 +70,11 @@ export function TabMarche() {
               { l: "Prix médian /m²", v: eurM2(comps.salePerM2.median), mock: false },
               { l: "Loyer moyen /m²", v: `${num(rentLast)} €`, mock: true },
               { l: "Vacance", v: pct(vacancy), mock: true },
-              { l: "Transactions /an", v: int(market.transactionVolume), mock: true },
+              {
+                l: "Transactions /an",
+                v: int(txVolume ?? market.transactionVolume),
+                mock: txVolume == null,
+              },
             ].map((s) => (
               <div key={s.l} className="rounded-lg bg-slate-50 px-3.5 py-2.5">
                 <div className="text-[10.5px] uppercase tracking-wide text-muted">{s.l}</div>
@@ -79,11 +90,18 @@ export function TabMarche() {
       {/* ---------------- Marché immobilier ---------------- */}
       <div className="grid gap-4 xl:grid-cols-[1.35fr_1fr]">
         <Card>
-          <CardTitle hint={`Prix moyen au m² — ${property.city}`} right={<MockBadge />}>
+          <CardTitle
+            hint={
+              realPrice
+                ? `Prix moyen au m² — ${property.city} (DVF 2015–2024)`
+                : `Prix moyen au m² — ${property.city}`
+            }
+            right={realPrice ? undefined : <MockBadge />}
+          >
             Évolution des prix de vente
           </CardTitle>
           <LineChart
-            data={hist.map((p) => ({ label: p.label, value: p.value }))}
+            data={priceChart}
             series={[{ key: "value", label: "Prix moyen €/m²", color: "#1d4477", area: true }]}
             yFormat={(v) => `${int(v)} €`}
             legend={false}
@@ -121,7 +139,13 @@ export function TabMarche() {
             tone={comps.priceVsComps > 0 ? "neg" : "pos"}
             strong
           />
-          <Row label="Volume de transactions" hint="12 derniers mois" value={<Mock>{int(market.transactionVolume)}</Mock>} />
+          <Row
+            label="Volume de transactions"
+            hint={txVolume != null ? "ventes en 2024" : "12 derniers mois"}
+            value={
+              txVolume != null ? int(txVolume) : <Mock>{int(market.transactionVolume)}</Mock>
+            }
+          />
           <div className="mt-3">
             <Insight tone={comps.priceVsComps > 5 ? "warn" : "good"}>
               À la médiane du secteur, ce bien de {a.surface} m² vaudrait{" "}
@@ -218,7 +242,10 @@ export function TabMarche() {
         )}
       </Card>
 
-      {/* ---------------- Marché locatif ---------------- */}
+      {/* ---------------- Marché locatif ----------------
+          Masqué pour l'instant : en attente d'un vrai indicateur de loyer au m².
+          Remettre `true` pour réafficher (chart + Indicateurs locatifs). */}
+      {false && (
       <div className="grid gap-4 xl:grid-cols-[1.35fr_1fr]">
         <Card>
           <CardTitle hint="Loyer moyen au m² et taux de vacance du parc" right={<MockBadge />}>
@@ -261,6 +288,7 @@ export function TabMarche() {
           </div>
         </Card>
       </div>
+      )}
 
       {/* ---------------- Population & économie ---------------- */}
       <div className="grid gap-4 xl:grid-cols-[1.35fr_1fr]">

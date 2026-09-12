@@ -19,6 +19,7 @@ import type {
   DvfComp,
   GeoRisks,
   MarketStats,
+  PriceHistory,
   Profile,
   Property,
 } from "./types";
@@ -74,6 +75,17 @@ async function fetchMarketStats(code: string): Promise<MarketStats | null> {
 async function fetchCrime(code: string): Promise<CrimeStats | null> {
   try {
     const res = await fetch(`/api/crime/${code}`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+/** Fetch yearly average €/m² (DVF indicators) for a commune code. */
+async function fetchPriceHistory(code: string): Promise<PriceHistory | null> {
+  try {
+    const res = await fetch(`/api/prices/${code}`);
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -151,6 +163,10 @@ type Ctx = {
   crime: CrimeStats | null;
   /** True while the SSMSI lookup is in flight. */
   crimeLoading: boolean;
+  /** Yearly average €/m² (DVF indicators) for the commune; null until loaded. */
+  priceHistory: PriceHistory | null;
+  /** True while the price-history lookup is in flight. */
+  priceLoading: boolean;
   /** Géorisques natural-risk summary for the property; null until loaded. */
   risks: GeoRisks | null;
   /** True while the Géorisques lookup is in flight. */
@@ -188,6 +204,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [marketLoading, setMarketLoading] = useState(false);
   const [crime, setCrime] = useState<CrimeStats | null>(null);
   const [crimeLoading, setCrimeLoading] = useState(false);
+  const [priceHistory, setPriceHistory] = useState<PriceHistory | null>(null);
+  const [priceLoading, setPriceLoading] = useState(false);
   const [risks, setRisks] = useState<GeoRisks | null>(null);
   const [risksLoading, setRisksLoading] = useState(false);
   const [profile, setProfileState] = useState<Profile | null>(null);
@@ -381,10 +399,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setMarketLoading(false);
         setCrime(null);
         setCrimeLoading(false);
+        setPriceHistory(null);
+        setPriceLoading(false);
         return;
       }
       setMarketLoading(true);
       setCrimeLoading(true);
+      setPriceLoading(true);
       fetchMarketStats(code).then((stats) => {
         if (cancelled) return;
         setMarketStats(stats);
@@ -394,6 +415,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (cancelled) return;
         setCrime(c);
         setCrimeLoading(false);
+      });
+      fetchPriceHistory(code).then((p) => {
+        if (cancelled) return;
+        setPriceHistory(p);
+        setPriceLoading(false);
       });
     })();
     return () => {
@@ -492,6 +518,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     marketLoading,
     crime,
     crimeLoading,
+    priceHistory,
+    priceLoading,
     risks,
     risksLoading,
     startScrape,

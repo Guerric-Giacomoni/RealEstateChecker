@@ -1,6 +1,7 @@
 "use client";
 
 import { useApp } from "@/lib/store";
+import { stats } from "@/lib/finance";
 import { eur, eurM2, eurMonth, int, monthYear, pct, num } from "@/lib/format";
 import { Badge, Card, CardTitle, DpeBadge, Insight, Row, Table, Td, pctWidth } from "../ui";
 import { ScatterStrip } from "../charts";
@@ -10,6 +11,12 @@ export function TabBien() {
     useApp();
 
   const perM2 = saleComps.map((c) => c.pricePerM2);
+
+  // Stats for the currently-listed comparables (SeLoger "Ventes en cours").
+  const listValues = comparables.map((c) => c.pricePerM2).filter((v) => v > 0);
+  const listPerM2 = stats(listValues);
+  const listVsMarket =
+    listPerM2.median > 0 ? (d.pricePerM2 / listPerM2.median - 1) * 100 : 0;
 
   return (
     <div className="space-y-4">
@@ -29,7 +36,7 @@ export function TabBien() {
             </div>
             <div>
               <Row label="Type" value={property.type} />
-              <Row label="DPE" value={<Badge tone={property.dpe <= "D" ? "good" : "warn"}>{property.dpe}</Badge>} />
+              <Row label="DPE" value={<DpeBadge value={property.dpe} />} />
               <Row label="GES" value={<Badge tone="info">{property.ges}</Badge>} />
               <Row label="Étage" value={property.floor.split("—")[0].trim()} />
               <Row label="Année de construction" value={property.year} />
@@ -233,7 +240,21 @@ export function TabBien() {
 
       {/* ---------------- Ventes en cours ---------------- */}
       <Card>
-        <CardTitle hint="Annonces comparables actuellement en vente (SeLoger)">
+        <CardTitle
+          hint={
+            comparables.length
+              ? `${comparables.length} annonces en vente (SeLoger) — €/m²`
+              : "Annonces comparables actuellement en vente (SeLoger)"
+          }
+          right={
+            comparables.length ? (
+              <Badge tone={listVsMarket > 3 ? "bad" : listVsMarket < -3 ? "good" : "warn"}>
+                {listVsMarket > 0 ? "+" : ""}
+                {pct(listVsMarket)} vs annonces
+              </Badge>
+            ) : undefined
+          }
+        >
           Ventes en cours
         </CardTitle>
 
@@ -247,6 +268,39 @@ export function TabBien() {
             Aucune annonce comparable actuellement en vente pour ce bien.
           </p>
         ) : (
+          <>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {[
+                { l: "Prix médian /m²", v: eurM2(listPerM2.median) },
+                { l: "Prix moyen /m²", v: eurM2(listPerM2.avg) },
+                { l: "Ce bien /m²", v: eurM2(d.pricePerM2) },
+                { l: "Fourchette", v: `${int(listPerM2.min)} – ${int(listPerM2.max)} €` },
+              ].map((s) => (
+                <div key={s.l} className="rounded-lg bg-slate-50 px-3 py-2.5">
+                  <div className="text-[10.5px] uppercase tracking-wide text-muted">{s.l}</div>
+                  <div className="tnum mt-0.5 text-[15px] font-semibold text-ink">{s.v}</div>
+                </div>
+              ))}
+            </div>
+
+            <ScatterStrip
+              values={listValues}
+              subject={d.pricePerM2}
+              median={listPerM2.median}
+              format={(v) => `${int(v)} €`}
+            />
+
+            <div className="mb-4">
+              <Insight tone={listVsMarket > 3 ? "warn" : "good"}>
+                Le prix affiché au m² est{" "}
+                <strong>
+                  {listVsMarket > 0 ? "supérieur de " : "inférieur de "}
+                  {pct(Math.abs(listVsMarket))}
+                </strong>{" "}
+                au prix médian des annonces actuellement en vente ({eurM2(listPerM2.median)}).
+              </Insight>
+            </div>
+
           <Table
             head={["Adresse", "Prix", "Surface", "€/m²", "DPE", ""]}
             align={["left", "right", "right", "right", "left", "right"]}
@@ -275,6 +329,7 @@ export function TabBien() {
               </tr>
             ))}
           </Table>
+          </>
         )}
       </Card>
 

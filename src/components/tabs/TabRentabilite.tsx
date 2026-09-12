@@ -101,8 +101,10 @@ export function TabRentabilite() {
       {/* ---------------- Loyers comparables ---------------- */}
       <RentComps />
 
-      {/* ---------------- Marché locatif ---------------- */}
-      <RentalMarket />
+      {/* ---------------- Marché locatif ----------------
+          Masqué pour l'instant : en attente d'un vrai indicateur de loyer au m².
+          Remettre `true` pour réafficher. */}
+      {false && <RentalMarket />}
 
       {/* ---------------- Charges ---------------- */}
       <div className="grid gap-4 lg:grid-cols-2">
