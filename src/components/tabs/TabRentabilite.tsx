@@ -747,7 +747,7 @@ function FinancingRecap() {
   return (
     <Card>
       <CardTitle hint="Hérité des hypothèses du projet">Financement</CardTitle>
-      <Row label="Apport" value={eur(a.downPayment)} />
+      <Row label="Apport" value={eur(d.downPaymentEffective)} />
       <Row label="Montant emprunté" value={eur(d.loanAmount)} />
       <Row label="Taux d'intérêt" value={pct(a.interestRate, 2)} />
       <Row label="Durée" value={`${a.loanYears} ans`} />

@@ -68,6 +68,10 @@ export function derive(a: Assumptions) {
   /* --- Financement --- */
   const financedBase = a.financeRenovation ? totalProject : acquisitionCost;
   const loanAmount = a.usesLoan ? Math.max(0, financedBase - a.downPayment) : 0;
+  // Cash a buyer must actually bring: their apport with a loan, or the whole
+  // project (price + frais + travaux) when paying cash — there's no borrowing
+  // to cover the rest.
+  const downPaymentEffective = a.usesLoan ? a.downPayment : totalProject;
   const monthlyPI = monthlyPrincipalInterest(loanAmount, a.interestRate, a.loanYears);
   const monthlyInsurance = (loanAmount * (a.insuranceRate / 100)) / 12;
   const monthlyPayment = monthlyPI + monthlyInsurance;
@@ -136,6 +140,7 @@ export function derive(a: Assumptions) {
     pricePerM2,
     allInPerM2,
     loanAmount,
+    downPaymentEffective,
     monthlyPI,
     monthlyInsurance,
     monthlyPayment,

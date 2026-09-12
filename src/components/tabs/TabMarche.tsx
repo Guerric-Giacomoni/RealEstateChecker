@@ -1,15 +1,14 @@
 "use client";
 
 import { useApp } from "@/lib/store";
-import { eur, eurM2, int, monthYear, num, pct } from "@/lib/format";
+import { eur, eurM2, int, num, pct } from "@/lib/format";
 import { Badge, Bar, Card, CardTitle, Insight, Mock, MockBadge, Row, Table, Td } from "../ui";
-import { BarChart, LineChart, ScatterStrip } from "../charts";
+import { BarChart, LineChart } from "../charts";
+import { SaleComps } from "../SaleComps";
 
 export function TabMarche() {
-  const { a, d, market, comps, property, saleComps, saleCompsLoading, priceHistory, marketStats, marketLoading, crime, crimeLoading, risks, risksLoading } =
+  const { a, d, market, comps, property, priceHistory, marketStats, marketLoading, crime, crimeLoading, risks, risksLoading } =
     useApp();
-
-  const perM2 = saleComps.map((c) => c.pricePerM2);
 
   // Real INSEE figures when loaded, else the mock market.
   const pop = marketStats?.population;
@@ -40,6 +39,8 @@ export function TabMarche() {
   const y1 = pv[pv.length - 2] ?? last;
   const y3 = pv[pv.length - 4] ?? pv[0];
   const y5 = pv[pv.length - 6] ?? pv[0];
+  // 10-year lookback, or the oldest year we have when the series is shorter.
+  const y10 = pv[pv.length - 11] ?? pv[0];
   // Transaction volume — real (latest year's recorded sales) when available.
   const txVolume = priceHistory?.latestVolume ?? null;
 
@@ -65,11 +66,14 @@ export function TabMarche() {
             </div>
             <div className="text-[13px] text-muted">{property.address}</div>
           </div>
-          <div className="ml-auto grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="ml-auto grid grid-cols-2 gap-3 sm:grid-cols-3">
             {[
               { l: "Prix médian /m²", v: eurM2(comps.salePerM2.median), mock: false },
-              { l: "Loyer moyen /m²", v: `${num(rentLast)} €`, mock: true },
-              { l: "Vacance", v: pct(vacancy), mock: true },
+              {
+                l: "Logements vacants",
+                v: pct(hv?.vacancyRate ?? vacancy),
+                mock: hv?.vacancyRate == null,
+              },
               {
                 l: "Transactions /an",
                 v: int(txVolume ?? market.transactionVolume),
@@ -107,11 +111,12 @@ export function TabMarche() {
             legend={false}
             height={220}
           />
-          <div className="mt-4 grid grid-cols-3 gap-3">
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
               { l: "1 an", v: ((last - y1) / y1) * 100 },
               { l: "3 ans", v: ((last - y3) / y3) * 100 },
               { l: "5 ans", v: ((last - y5) / y5) * 100 },
+              { l: "10 ans", v: ((last - y10) / y10) * 100 },
             ].map((s) => (
               <div key={s.l} className="rounded-lg bg-slate-50 px-3 py-2.5 text-center">
                 <div className="text-[10.5px] uppercase tracking-wide text-muted">{s.l}</div>
@@ -159,88 +164,7 @@ export function TabMarche() {
       </div>
 
       {/* ---------------- Ventes comparables (DVF, réel) ---------------- */}
-      <Card>
-        <CardTitle
-          hint={
-            saleComps.length
-              ? `${saleComps.length} ventes réelles (DVF 2025) — même code postal`
-              : "Ventes réelles enregistrées (DVF 2025)"
-          }
-          right={
-            <Badge tone={comps.priceVsComps > 3 ? "bad" : comps.priceVsComps < -3 ? "good" : "warn"}>
-              {comps.priceVsComps > 0 ? "+" : ""}
-              {pct(comps.priceVsComps)} vs marché
-            </Badge>
-          }
-        >
-          Ventes comparables
-        </CardTitle>
-
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {[
-            { l: "Prix médian /m²", v: eurM2(comps.salePerM2.median) },
-            { l: "Prix moyen /m²", v: eurM2(comps.salePerM2.avg) },
-            { l: "Ce bien /m²", v: eurM2(d.pricePerM2) },
-            { l: "Fourchette", v: `${int(comps.salePerM2.min)} – ${int(comps.salePerM2.max)} €` },
-          ].map((s) => (
-            <div key={s.l} className="rounded-lg bg-slate-50 px-3 py-2.5">
-              <div className="text-[10.5px] uppercase tracking-wide text-muted">{s.l}</div>
-              <div className="tnum mt-0.5 text-[15px] font-semibold text-ink">{s.v}</div>
-            </div>
-          ))}
-        </div>
-
-        <ScatterStrip
-          values={perM2}
-          subject={d.pricePerM2}
-          median={comps.salePerM2.median}
-          format={(v) => `${int(v)} €`}
-        />
-
-        <div className="mb-4">
-          <Insight tone={comps.priceVsComps > 3 ? "warn" : "good"}>
-            Le prix affiché est{" "}
-            <strong>
-              {comps.priceVsComps > 0 ? "supérieur de " : "inférieur de "}
-              {pct(Math.abs(comps.priceVsComps))}
-            </strong>{" "}
-            au prix médian des ventes comparables. À la médiane du secteur, le bien se
-            négocierait autour de{" "}
-            <strong>{eur(comps.salePerM2.median * a.surface)}</strong>.
-          </Insight>
-        </div>
-
-        {saleCompsLoading ? (
-          <div className="flex items-center gap-2.5 py-4 text-[13px] text-muted">
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-navy-200 border-t-navy-600" />
-            Recherche des ventes récentes…
-          </div>
-        ) : saleComps.length === 0 ? (
-          <p className="text-[13px] text-muted">
-            Aucune vente enregistrée (DVF 2025) dans ce code postal.
-          </p>
-        ) : (
-          <Table
-            head={["Adresse", "Date", "Prix", "Surface", "€/m²", "Pièces"]}
-            align={["left", "left", "right", "right", "right", "right"]}
-          >
-            {saleComps.map((c) => (
-              <tr key={c.id} className="transition hover:bg-slate-50/70">
-                <Td className="text-slate-600">
-                  <span className="block max-w-[220px] truncate">{c.address || "—"}</span>
-                </Td>
-                <Td>{monthYear(c.soldOn)}</Td>
-                <Td right strong>{eur(c.price)}</Td>
-                <Td right>{c.surface} m²</Td>
-                <Td right className={c.pricePerM2 > d.pricePerM2 ? "!text-pos" : "!text-bad"}>
-                  {int(c.pricePerM2)} €
-                </Td>
-                <Td right>{c.rooms ?? "—"}</Td>
-              </tr>
-            ))}
-          </Table>
-        )}
-      </Card>
+      <SaleComps />
 
       {/* ---------------- Marché locatif ----------------
           Masqué pour l'instant : en attente d'un vrai indicateur de loyer au m².
@@ -337,9 +261,6 @@ export function TabMarche() {
           {pop?.change10y != null && (
             <Row label="Croissance 10 ans" value={pct(pop.change10y)} tone={growthTone(pop.change10y)} />
           )}
-          <Row label="Ménages" value={<Mock>{int(market.households)}</Mock>} />
-          <Row label="Croissance des ménages" value={<Mock>{pct(market.householdGrowth)}</Mock>} />
-          <Row label="Part de locataires" value={<Mock>{pct(market.tenantShare, 0)}</Mock>} />
           <Row
             label="Revenu médian"
             hint={inc?.year ? `niveau de vie ${inc.year}` : undefined}
