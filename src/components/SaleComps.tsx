@@ -93,9 +93,7 @@ export function SaleComps() {
         >
           {saleComps.map((c) => (
             <tr key={c.id} className="transition hover:bg-slate-50/70">
-              <Td className="text-slate-600">
-                <span className="block max-w-[220px] truncate">{c.address || "—"}</span>
-              </Td>
+              <Td className="text-slate-600">{c.address || "—"}</Td>
               <Td>{monthYear(c.soldOn)}</Td>
               <Td right strong>{eur(c.price)}</Td>
               <Td right>{c.surface} m²</Td>

@@ -101,6 +101,30 @@ export function valueColor(v: number): string {
 /* Stat tiles                                                          */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Small "i" affordance with a definition tooltip. Pure CSS: the tooltip shows
+ * on hover and on click/tap (via focus-within), so it works on touch too.
+ */
+export function InfoDot({ text }: { text: string }) {
+  return (
+    <span className="group/info absolute right-2 top-2 z-10">
+      <button
+        type="button"
+        aria-label={text}
+        className="flex h-[15px] w-[15px] items-center justify-center rounded-full border border-navy-200 text-[9px] font-bold leading-none text-navy-400 transition hover:bg-navy-50 hover:text-navy-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-navy-300"
+      >
+        i
+      </button>
+      <span
+        role="tooltip"
+        className="pointer-events-none absolute right-0 top-[22px] z-20 w-52 rounded-lg border border-line bg-white px-3 py-2 text-left text-[11.5px] font-normal normal-case leading-relaxed tracking-normal text-slate-600 opacity-0 shadow-lg transition-opacity duration-150 group-hover/info:opacity-100 group-focus-within/info:opacity-100"
+      >
+        {text}
+      </span>
+    </span>
+  );
+}
+
 export function Stat({
   label,
   value,
@@ -108,6 +132,7 @@ export function Stat({
   tone = "neutral",
   spark,
   emphasis = false,
+  info,
 }: {
   label: string;
   value: string;
@@ -115,6 +140,7 @@ export function Stat({
   tone?: Tone;
   spark?: number[];
   emphasis?: boolean;
+  info?: string;
 }) {
   const color =
     tone === "good"
@@ -125,7 +151,8 @@ export function Stat({
           ? "text-warn"
           : "text-navy-600";
   return (
-    <Card className="flex flex-col">
+    <Card className="relative flex flex-col">
+      {info && <InfoDot text={info} />}
       <div className="text-center">
         <div className="text-[11px] font-semibold uppercase tracking-[0.05em] text-muted">
           {label}

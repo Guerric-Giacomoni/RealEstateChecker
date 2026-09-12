@@ -193,6 +193,9 @@ const AppCtx = createContext<Ctx | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [a, setA] = useState<Assumptions>(DEFAULTS);
+  // Snapshot of the assumptions as first established (onboarding + the loaded
+  // listing). "Réinitialiser" restores this, not the demo defaults.
+  const [baseline, setBaseline] = useState<Assumptions>(DEFAULTS);
   const [property, setProperty] = useState<Property>(PROPERTY);
   const [comparables, setComparables] = useState<Comparable[]>(COMPARABLES);
   const [comparablesLoading, setComparablesLoading] = useState(false);
@@ -218,7 +221,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [],
   );
   const patch = useCallback((p: Partial<Assumptions>) => setA((prev) => ({ ...prev, ...p })), []);
-  const reset = useCallback(() => setA(DEFAULTS), []);
+  const reset = useCallback(() => setA(baseline), [baseline]);
 
   const startScrape = useCallback((rawUrl: string) => {
     return new Promise<void>((resolve, reject) => {
@@ -229,6 +232,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         subjectApplied = true;
         setProperty(p);
         setA((prev) => ({ ...prev, ...assumptions }));
+        setBaseline((prev) => ({ ...prev, ...assumptions })); // this is the reset target
         if (!settled) {
           settled = true;
           resolve(); // subject is ready — the UI can advance
@@ -339,17 +343,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Frais d'agence inclus → fees already in the price; hors honoraires → add
     // a ~5% estimate the user can adjust in Hypothèses.
     const agencyFees = entry.feesIncluded ? 0 : Math.round(entry.price * 0.05);
-    setA((prev) => ({
-      ...prev,
+    const entryValues = {
       purchasePrice: entry.price,
       surface: entry.surface,
       agencyFees,
-    }));
+    };
+    setA((prev) => ({ ...prev, ...entryValues }));
+    setBaseline((prev) => ({ ...prev, ...entryValues })); // reset target
   }, []);
 
   const finishOnboarding = useCallback((p: Profile, values: Partial<Assumptions>) => {
     setProfileState(p);
     setA((prev) => ({ ...prev, ...values }));
+    setBaseline((prev) => ({ ...prev, ...values })); // fold into the reset target
     setOnboarded(true);
   }, []);
 
@@ -359,8 +365,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const dirty = useMemo(
-    () => (Object.keys(DEFAULTS) as (keyof Assumptions)[]).some((k) => a[k] !== DEFAULTS[k]),
-    [a],
+    () => (Object.keys(baseline) as (keyof Assumptions)[]).some((k) => a[k] !== baseline[k]),
+    [a, baseline],
   );
 
   const d = useMemo(() => derive(a), [a]);

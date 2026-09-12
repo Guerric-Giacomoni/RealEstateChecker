@@ -47,6 +47,7 @@ export function TabRentabilite() {
           sub="après toutes charges"
           tone={d.monthlyCashFlow >= 0 ? "good" : "bad"}
           spark={sparkFor(3)}
+          info="Ce qu'il reste chaque mois une fois le loyer encaissé et TOUTES les sorties payées (crédit, charges, taxe foncière, gestion, provisions). Positif = le bien s'autofinance ; négatif = effort d'épargne mensuel."
         />
         <Stat
           label="Rendement brut"
@@ -54,6 +55,7 @@ export function TabRentabilite() {
           sub="sur coût total"
           tone="neutral"
           spark={sparkFor(7)}
+          info="Loyers annuels ÷ coût total du projet (prix + frais + travaux), avant charges et impôts. Utile pour comparer rapidement des biens, mais optimiste."
         />
         <Stat
           label="Rendement net"
@@ -61,6 +63,7 @@ export function TabRentabilite() {
           sub="après charges"
           tone={d.netYield >= 4.5 ? "good" : d.netYield >= 3 ? "warn" : "bad"}
           spark={sparkFor(11)}
+          info="Loyers annuels moins les charges d'exploitation (vacance, gestion, taxe foncière, copro, assurances, entretien), ÷ coût total. Hors crédit et fiscalité. Bien plus réaliste que le brut."
         />
         <Stat
           label="Cash-on-cash"
@@ -68,6 +71,7 @@ export function TabRentabilite() {
           sub={`sur ${eur(d.cashInvested)} investis`}
           tone={d.cashOnCash >= 3 ? "good" : d.cashOnCash >= 0 ? "warn" : "bad"}
           spark={sparkFor(17)}
+          info="Cash-flow annuel ÷ capital réellement immobilisé (apport + frais + travaux non financés). Mesure le rendement de votre argent propre, effet de levier du crédit inclus."
         />
         <Stat
           label="DSCR"
@@ -75,6 +79,7 @@ export function TabRentabilite() {
           sub="revenus / dette"
           tone={d.dscr >= 1.1 ? "good" : d.dscr >= 0.9 ? "warn" : "bad"}
           spark={sparkFor(23)}
+          info="Debt Service Coverage Ratio : résultat d'exploitation ÷ échéance de crédit. > 1 = les loyers couvrent la dette ; < 1 = ils n'y suffisent pas. Les banques visent souvent ≥ 1,2."
         />
         <Stat
           label="Point mort"
@@ -82,6 +87,7 @@ export function TabRentabilite() {
           sub={`vacance locale ${pct(localVacancy)}`}
           tone={d.breakEvenOccupancy <= 90 ? "good" : d.breakEvenOccupancy <= 100 ? "warn" : "bad"}
           spark={sparkFor(29)}
+          info="Taux d'occupation minimum pour équilibrer l'opération (cash-flow nul). Plus il est bas, plus vous avez de marge face à la vacance. « > 100 % » = le bien ne s'équilibre pas même loué en continu."
         />
       </div>
 
