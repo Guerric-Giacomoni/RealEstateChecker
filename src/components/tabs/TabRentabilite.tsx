@@ -1,8 +1,11 @@
 "use client";
 
-import { useDeferredValue, useMemo } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import { useApp } from "@/lib/store";
+import type { Assumptions } from "@/lib/types";
 import {
+  apportForBreakEven,
+  cashFlowWithOverrides,
   LEVERS,
   makeItWork,
   projection,
@@ -355,6 +358,8 @@ function Thresholds() {
 
   const rows = useMemo(() => {
     return LEVERS.map((l) => {
+      // The apport gets its own always-present card (see below), uncapped.
+      if (l.key === "downPayment") return null;
       const target = solveThreshold(a, l);
       if (target === null) return null;
       const current = a[l.key] as number;
@@ -379,6 +384,7 @@ function Thresholds() {
   }, [a]);
 
   const scenarios = useMemo(() => makeItWork(a), [a]);
+  const apport = useMemo(() => apportForBreakEven(a), [a]);
 
   if (viable) {
     return (
@@ -445,17 +451,48 @@ function Thresholds() {
               {r.lever.better === -1 ? "≤ " : "≥ "}
               {r.fmt(r.target)}
             </div>
+            <div className="mt-1.5 text-[11px] font-medium text-pos">
+              {r.lever.better === -1
+                ? "Deal viable à ce niveau ou en dessous"
+                : "Deal viable à ce niveau ou au-dessus"}
+            </div>
             <div className="mt-1 text-[11.5px] text-faint">
               actuellement {r.fmt(r.current)} · {r.delta > 0 ? "+" : ""}
               {r.fmt(Math.abs(r.delta)).replace("-", "")} à {r.delta > 0 ? "ajouter" : "retrancher"}
             </div>
           </div>
         ))}
-        {rows.length === 0 && (
-          <p className="text-[13px] text-muted">
-            Aucun levier isolé ne suffit à équilibrer l&apos;opération dans des plages réalistes.
-          </p>
-        )}
+
+        {/* Apport is always offered as a lever to reach break-even. */}
+        <div className="relative rounded-xl border border-line px-4 py-3 transition hover:border-navy-300 hover:shadow-sm">
+          {rows.length > 0 && (
+            <span className="absolute -left-[7px] top-1/2 hidden -translate-y-1/2 rounded bg-canvas px-1 text-[10px] font-semibold text-faint sm:block">
+              OU
+            </span>
+          )}
+          <div className="text-[12px] text-muted">Apport</div>
+          {apport.achievable ? (
+            <>
+              <div className="tnum mt-0.5 text-[19px] font-semibold text-navy-700">
+                ≥ {eur(apport.apport)}
+              </div>
+              <div className="mt-1.5 text-[11px] font-medium text-pos">
+                Deal viable à ce niveau ou au-dessus
+              </div>
+              <div className="mt-1 text-[11.5px] text-faint">
+                actuellement {eur(a.downPayment)} · +{eur(apport.delta)} à ajouter
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="mt-0.5 text-[15px] font-semibold text-slate-500">Ne suffit pas seul</div>
+              <div className="mt-1.5 text-[11.5px] text-faint">
+                Même en achat comptant (apport {eur(apport.apport)}), le cash-flow reste négatif —
+                jouez aussi sur le loyer, le prix ou les charges.
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {scenarios.length > 0 && (
@@ -511,57 +548,190 @@ function Thresholds() {
 /* ================================================================== */
 
 function Sensitivity() {
-  const { a: live } = useApp();
+  const { a: live, patch, reset, dirty } = useApp();
   const a = useDeferredValue(live);
   const rows = useMemo(() => sensitivityTable(a), [a]);
   const maxImpact = Math.max(...rows.map((r) => Math.abs(r.impact)), 1);
+  const baseCF = useMemo(() => cashFlowWithOverrides(a, {}), [a]);
+
+  // Selected variations (by label). Opposite scenarios share a lever key, so we
+  // keep at most one per key — you can't pick both "Prix −5 %" and "+5 %".
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const toggle = (row: (typeof rows)[number]) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(row.label)) {
+        next.delete(row.label);
+        return next;
+      }
+      for (const other of rows) if (other.lever.key === row.lever.key) next.delete(other.label);
+      next.add(row.label);
+      return next;
+    });
+
+  // Cumulative effect of every selected variation, applied together.
+  const overrides = useMemo(() => {
+    const o: Record<string, number> = {};
+    // Sensitivity levers are all numeric fields of Assumptions.
+    for (const r of rows) if (selected.has(r.label)) o[r.lever.key] = r.newValue;
+    return o as Partial<Assumptions>;
+  }, [rows, selected]);
+  const combinedCF = useMemo(() => cashFlowWithOverrides(a, overrides), [a, overrides]);
+  const combinedImpact = combinedCF - baseCF;
+
+  // Commit the selected variations to the real hypotheses (all tabs recalc).
+  // The tab's "Réinitialiser" restores the original hypotheses.
+  const applyToAssumptions = () => {
+    patch(overrides);
+    setSelected(new Set());
+  };
+
+  const signed = (v: number) => eurMonthSigned(v).replace("/mois", "");
+
+  const header = () => (
+    <div className="flex items-center gap-3 border-b border-line pb-1 text-[10.5px] uppercase tracking-wide text-faint">
+      <span className="w-[168px] shrink-0" />
+      <span className="flex-1" />
+      <span className="w-[80px] text-right">Impact CF</span>
+      <span className="w-[88px] text-right">Nouveau CF</span>
+    </div>
+  );
+
+  const line = (r: (typeof rows)[number]) => {
+    const sel = selected.has(r.label);
+    return (
+      <button
+        key={r.label}
+        type="button"
+        onClick={() => toggle(r)}
+        className={`flex w-full items-center gap-3 rounded-md px-1 py-1.5 text-left transition ${
+          sel ? "bg-navy-50" : "hover:bg-slate-50"
+        }`}
+      >
+        <span className="flex w-[168px] shrink-0 items-center gap-2 text-[12.5px] text-slate-600">
+          <span
+            className={`flex h-[15px] w-[15px] shrink-0 items-center justify-center rounded-[4px] border text-[9px] font-bold leading-none text-white ${
+              sel ? "border-navy-600 bg-navy-600" : "border-navy-300 bg-white"
+            }`}
+          >
+            {sel ? "✓" : ""}
+          </span>
+          {r.label}
+        </span>
+        <div className="relative h-4 flex-1">
+          <div className="absolute left-1/2 top-0 h-full w-px bg-line" />
+          <div
+            className={`absolute top-1/2 h-[6px] -translate-y-1/2 rounded-full ${
+              r.impact >= 0 ? "bg-pos left-1/2" : "bg-bad"
+            }`}
+            style={
+              r.impact >= 0
+                ? { width: `${pctWidth(Math.abs(r.impact), maxImpact * 2)}%` }
+                : { right: "50%", width: `${pctWidth(Math.abs(r.impact), maxImpact * 2)}%` }
+            }
+          />
+        </div>
+        <span
+          className={`tnum w-[80px] shrink-0 text-right text-[12.5px] font-semibold ${
+            r.impact >= 0 ? "text-pos" : "text-bad"
+          }`}
+        >
+          {signed(r.impact)}
+        </span>
+        <span
+          className={`tnum w-[88px] shrink-0 text-right text-[12.5px] ${
+            r.newCashFlow >= 0 ? "text-pos" : "text-bad"
+          }`}
+        >
+          {signed(r.newCashFlow)}
+        </span>
+      </button>
+    );
+  };
+
+  const left = rows.filter((_, i) => i % 2 === 0);
+  const right = rows.filter((_, i) => i % 2 === 1);
 
   return (
     <Card>
-      <CardTitle hint="Impact isolé de chaque variation sur le cash-flow mensuel">
+      <CardTitle
+        hint="Cochez des variations : leur impact se cumule (une seule par catégorie)"
+        right={
+          selected.size > 0 ? (
+            <button
+              onClick={() => setSelected(new Set())}
+              className="rounded-lg border border-navy-200 bg-navy-50 px-3 py-1.5 text-[12px] font-semibold text-navy-600 transition hover:bg-navy-100"
+            >
+              Réinitialiser la sélection
+            </button>
+          ) : undefined
+        }
+      >
         Analyse de sensibilité
       </CardTitle>
-      <div className="grid gap-x-8 gap-y-1 lg:grid-cols-2">
-        {rows.map((r) => (
-          <div key={r.label} className="flex items-center gap-3 py-1.5">
-            <span className="w-[150px] shrink-0 text-[12.5px] text-slate-600">{r.label}</span>
-            <div className="relative h-4 flex-1">
-              <div className="absolute left-1/2 top-0 h-full w-px bg-line" />
-              <div
-                className={`absolute top-1/2 h-[6px] -translate-y-1/2 rounded-full ${
-                  r.impact >= 0 ? "bg-pos left-1/2" : "bg-bad"
-                }`}
-                style={
-                  r.impact >= 0
-                    ? { width: `${pctWidth(Math.abs(r.impact), maxImpact * 2)}%` }
-                    : {
-                        right: "50%",
-                        width: `${pctWidth(Math.abs(r.impact), maxImpact * 2)}%`,
-                      }
-                }
-              />
-            </div>
-            <span
-              className={`tnum w-[86px] shrink-0 text-right text-[12.5px] font-semibold ${
-                r.impact >= 0 ? "text-pos" : "text-bad"
-              }`}
-            >
-              {eurMonthSigned(r.impact).replace("/mois", "")}
-            </span>
-            <span
-              className={`tnum w-[92px] shrink-0 text-right text-[12.5px] ${
-                r.newCashFlow >= 0 ? "text-pos" : "text-bad"
-              }`}
-            >
-              {eurMonthSigned(r.newCashFlow).replace("/mois", "")}
-            </span>
-          </div>
-        ))}
+
+      <div className="grid gap-x-8 gap-y-5 lg:grid-cols-2">
+        <div className="space-y-0.5">
+          {header()}
+          {left.map(line)}
+        </div>
+        <div className="space-y-0.5">
+          {header()}
+          {right.map(line)}
+        </div>
       </div>
-      <div className="mt-3 flex justify-end gap-3 border-t border-line pt-2 text-[10.5px] uppercase tracking-wide text-faint">
-        <span className="w-[86px] text-right">Impact</span>
-        <span className="w-[92px] text-right">Nouveau CF</span>
+
+      {/* Cumulative total of the selected variations */}
+      <div className="mt-4 flex items-center gap-3 border-t-2 border-line pt-3">
+        <span className="w-[168px] shrink-0 text-[13px] font-semibold text-ink">Total combiné</span>
+        <span className="flex-1 text-[11.5px] text-muted">
+          {selected.size === 0
+            ? `Aucune variation — cash-flow actuel ${signed(baseCF)}`
+            : `${selected.size} variation${selected.size > 1 ? "s" : ""} cumulée${
+                selected.size > 1 ? "s" : ""
+              }`}
+        </span>
+        <span
+          className={`tnum w-[80px] shrink-0 text-right text-[14px] font-bold ${
+            combinedImpact >= 0 ? "text-pos" : "text-bad"
+          }`}
+        >
+          {selected.size ? signed(combinedImpact) : "—"}
+        </span>
+        <span
+          className={`tnum w-[88px] shrink-0 text-right text-[14px] font-bold ${
+            combinedCF >= 0 ? "text-pos" : "text-bad"
+          }`}
+        >
+          {signed(combinedCF)}
+        </span>
       </div>
+
+      {(selected.size > 0 || dirty) && (
+        <div className="mt-3 flex flex-wrap items-center justify-end gap-3">
+          {selected.size > 0 && (
+            <span className="mr-auto text-[11px] text-faint">
+              « Appliquer » modifie les hypothèses de tous les onglets — réversible ci-contre.
+            </span>
+          )}
+          {dirty && (
+            <button
+              onClick={reset}
+              className="rounded-lg border border-navy-200 bg-white px-3.5 py-1.5 text-[12px] font-semibold text-navy-600 transition hover:bg-navy-50"
+            >
+              Restaurer les hypothèses initiales
+            </button>
+          )}
+          {selected.size > 0 && (
+            <button
+              onClick={applyToAssumptions}
+              className="rounded-lg bg-navy-600 px-3.5 py-1.5 text-[12px] font-semibold text-white transition hover:bg-navy-700"
+            >
+              Appliquer aux hypothèses
+            </button>
+          )}
+        </div>
+      )}
     </Card>
   );
 }

@@ -278,7 +278,7 @@ export function TabHypotheses() {
           <NumberField label="Charges de copropriété" value={a.condoCharges} step={50} suffix="€/an" onChange={(v) => set("condoCharges", v)} />
           <NumberField label="Assurance PNO" value={a.landlordInsurance} step={10} suffix="€/an" onChange={(v) => set("landlordInsurance", v)} />
           <NumberField label="Assurance loyers impayés" value={a.unpaidRentInsurancePct} step={0.1} suffix="%" onChange={(v) => set("unpaidRentInsurancePct", v)} />
-          <NumberField label="Frais de gestion" value={a.managementFeePct} step={0.5} suffix="%" onChange={(v) => set("managementFeePct", v)} hint="0 % si gestion directe" />
+          <NumberField label="Frais de gestion" value={a.managementFeePct} step={0.5} suffix="%" onChange={(v) => set("managementFeePct", v)} hint="0 % si gestion directe" info="Commission d'une agence de gestion locative (mise en location, quittances, encaissement, relances), en % du loyer encaissé. 0 % en gestion directe (vous gérez vous-même)." />
           <NumberField label="Entretien" value={a.maintenancePct} step={0.5} suffix="%" onChange={(v) => set("maintenancePct", v)} />
           <NumberField label="Provision travaux (CAPEX)" value={a.capexPct} step={0.5} suffix="%" onChange={(v) => set("capexPct", v)} />
           <NumberField label="Autres charges" value={a.otherCosts} step={10} suffix="€/an" onChange={(v) => set("otherCosts", v)} />

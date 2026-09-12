@@ -21,6 +21,8 @@ export function Onboarding() {
   const [draft, setDraft] = useState<Assumptions>({
     ...a,
     monthlyRent: comps.suggestedRent,
+    // Rough taxe foncière estimate: about one month's rent (editable below).
+    propertyTax: Math.round(comps.suggestedRent / 50) * 50 || a.propertyTax,
   });
 
   const upd = <K extends keyof Assumptions>(k: K, v: Assumptions[K]) =>
@@ -232,9 +234,9 @@ export function Onboarding() {
               title="Le reste est pré-rempli"
               note="Charges typiques d'un appartement de cette taille. Modifiables ici ou à tout moment dans l'onglet « Hypothèses du projet »."
             >
-              <NumberField compact label="Taxe foncière" value={draft.propertyTax} step={50} suffix="€/an" onChange={(v) => upd("propertyTax", v)} />
+              <NumberField compact label="Taxe foncière" value={draft.propertyTax} step={50} suffix="€/an" hint="≈ 1 mois de loyer" onChange={(v) => upd("propertyTax", v)} />
               <NumberField compact label="Charges de copropriété" value={draft.condoCharges} step={50} suffix="€/an" onChange={(v) => upd("condoCharges", v)} />
-              <NumberField compact label="Frais de gestion" value={draft.managementFeePct} step={0.5} suffix="%" onChange={(v) => upd("managementFeePct", v)} />
+              <NumberField compact label="Frais de gestion" value={draft.managementFeePct} step={0.5} suffix="%" hint="direct = 0 %" info="Commission d'une agence de gestion locative (mise en location, quittances, encaissement, relances), en % du loyer encaissé. 0 % en gestion directe (vous gérez vous-même)." onChange={(v) => upd("managementFeePct", v)} />
               <NumberField compact label="Entretien + provision travaux" value={draft.maintenancePct + draft.capexPct} step={0.5} suffix="%" onChange={(v) => { upd("maintenancePct", v * 0.625); upd("capexPct", v * 0.375); }} />
             </Prefilled>
 

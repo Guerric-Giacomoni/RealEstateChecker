@@ -149,7 +149,10 @@ export function AssumptionsRecap({ onEdit }: { onEdit: () => void }) {
             <Row label="Vacance" value={pct(a.vacancyRate)} />
             <Row label="Taxe foncière" value={eur(a.propertyTax)} />
             <Row label="Charges copro" value={eur(a.condoCharges)} />
-            <Row label="Frais de gestion" value={pct(a.managementFeePct)} />
+            <Row
+              label="Frais de gestion"
+              value={a.managementFeePct === 0 ? "0 % · gestion directe" : pct(a.managementFeePct)}
+            />
           </>
         )}
       </div>

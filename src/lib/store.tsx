@@ -93,16 +93,47 @@ async function fetchPriceHistory(code: string): Promise<PriceHistory | null> {
   }
 }
 
-/** Fetch real past-sold comparables (DVF) for a postal code + type + surface. */
-async function fetchDvfComps(cp: string, type: string, surface: number): Promise<DvfComp[]> {
+/** Fetch real past-sold comparables (DVF) — by radius around a point if given,
+ *  else across the whole postal code. */
+async function fetchDvfComps(
+  cp: string,
+  type: string,
+  surface: number,
+  point?: { lat: number; lon: number; radiusKm: number },
+): Promise<DvfComp[]> {
   try {
-    const res = await fetch(
-      `/api/dvf/comparables?cp=${cp}&type=${encodeURIComponent(type)}&surface=${surface}`,
-    );
+    const qs = point
+      ? `lat=${point.lat}&lon=${point.lon}&radius=${point.radiusKm}&type=${encodeURIComponent(type)}`
+      : `cp=${cp}&type=${encodeURIComponent(type)}&surface=${surface}`;
+    const res = await fetch(`/api/dvf/comparables?${qs}`);
     if (!res.ok) return [];
     return (await res.json()).comps ?? [];
   } catch {
     return [];
+  }
+}
+
+/** Geocode a free-text address via the Base Adresse Nationale (keyless, CORS). */
+async function geocodeAddress(
+  query: string,
+): Promise<{ label: string; lat: number; lon: number; postcode?: string; city?: string } | null> {
+  try {
+    const res = await fetch(
+      `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&limit=1`,
+    );
+    if (!res.ok) return null;
+    const f = (await res.json()).features?.[0];
+    if (!f) return null;
+    const [lon, lat] = f.geometry.coordinates;
+    return {
+      label: f.properties.label,
+      lat,
+      lon,
+      postcode: f.properties.postcode,
+      city: f.properties.city,
+    };
+  } catch {
+    return null;
   }
 }
 
@@ -151,10 +182,15 @@ type Ctx = {
   rentComparables: Comparable[];
   /** True while the rent comparables search is still running. */
   rentComparablesLoading: boolean;
-  /** Past sold comparables (DVF) for the property's postal code. */
+  /** Past sold comparables (DVF) for the property's postal code / radius. */
   saleComps: DvfComp[];
   /** True while the DVF lookup is in flight. */
   saleCompsLoading: boolean;
+  /** Radius (km) around the exact address for DVF comps; null = whole postal code. */
+  radiusKm: number | null;
+  setRadiusKm: (v: number | null) => void;
+  /** Geocode + set the exact address (adds the subject pin, enables radius). */
+  setExactAddress: (query: string) => Promise<{ lat: number; lon: number } | null>;
   /** Local INSEE statistics (population, income…) for the commune; null until loaded. */
   marketStats: MarketStats | null;
   /** True while the INSEE lookup is in flight. */
@@ -203,6 +239,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [rentComparablesLoading, setRentComparablesLoading] = useState(false);
   const [saleComps, setSaleComps] = useState<DvfComp[]>([]);
   const [saleCompsLoading, setSaleCompsLoading] = useState(false);
+  // null = whole postal code; a number = radius (km) around the exact address.
+  const [radiusKm, setRadiusKm] = useState<number | null>(null);
   const [marketStats, setMarketStats] = useState<MarketStats | null>(null);
   const [marketLoading, setMarketLoading] = useState(false);
   const [crime, setCrime] = useState<CrimeStats | null>(null);
@@ -222,6 +260,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
   const patch = useCallback((p: Partial<Assumptions>) => setA((prev) => ({ ...prev, ...p })), []);
   const reset = useCallback(() => setA(baseline), [baseline]);
+
+  // Geocode a free-text address (Base Adresse Nationale) and set it as the
+  // subject location — adds the map pin and enables radius-based comparables.
+  const setExactAddress = useCallback(async (query: string) => {
+    const g = await geocodeAddress(query);
+    if (!g) return null;
+    setProperty((prev) => ({ ...prev, address: g.label, latitude: g.lat, longitude: g.lon }));
+    return { lat: g.lat, lon: g.lon };
+  }, []);
 
   const startScrape = useCallback((rawUrl: string) => {
     return new Promise<void>((resolve, reject) => {
@@ -371,24 +418,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const d = useMemo(() => derive(a), [a]);
 
-  // Pull real DVF sold comparables whenever the property's postal code / type
-  // changes (also on surface edits — the query is a fast local SQLite lookup).
+  // Pull real DVF sold comparables. Radius mode (around the exact address) when
+  // a radius + coordinates are set, otherwise the whole postal code.
   useEffect(() => {
     const cp = property.postalCode;
+    const lat = property.latitude;
+    const lon = property.longitude;
+    const useRadius = radiusKm != null && lat != null && lon != null;
     const t = setTimeout(() => {
-      if (!/^\d{5}$/.test(cp || "")) {
+      if (!useRadius && !/^\d{5}$/.test(cp || "")) {
         setSaleComps([]);
         setSaleCompsLoading(false);
         return;
       }
       setSaleCompsLoading(true);
-      fetchDvfComps(cp, property.type, a.surface).then((rows) => {
+      const point = useRadius ? { lat: lat!, lon: lon!, radiusKm: radiusKm! } : undefined;
+      fetchDvfComps(cp, property.type, a.surface, point).then((rows) => {
         setSaleComps(rows);
         setSaleCompsLoading(false);
       });
     }, 250);
     return () => clearTimeout(t);
-  }, [property.postalCode, property.type, a.surface]);
+  }, [property.postalCode, property.type, a.surface, property.latitude, property.longitude, radiusKm]);
 
   // Local INSEE stats: resolve the commune's INSEE code (from the property or
   // its postal code + city) then fetch population + income.
@@ -520,6 +571,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     rentComparablesLoading,
     saleComps,
     saleCompsLoading,
+    radiusKm,
+    setRadiusKm,
+    setExactAddress,
     marketStats,
     marketLoading,
     crime,

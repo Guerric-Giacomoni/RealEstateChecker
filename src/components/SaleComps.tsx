@@ -1,27 +1,57 @@
 "use client";
 
+import { useState } from "react";
+import dynamic from "next/dynamic";
 import { useApp } from "@/lib/store";
 import { eur, eurM2, int, monthYear, pct } from "@/lib/format";
 import { Badge, Card, CardTitle, Table, Td } from "./ui";
 import { ScatterStrip } from "./charts";
 
+const DvfMap = dynamic(() => import("./DvfMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[360px] items-center justify-center rounded-xl border border-line text-[13px] text-muted">
+      Chargement de la carte…
+    </div>
+  ),
+});
+
+const RADII = [0.5, 1, 2, 5];
+
 /**
  * Real DVF "Ventes comparables" card, shared by the Le bien and Marché tabs.
- * Mirrors the Loyers comparables card: a button to apply the market-suggested
- * price and a slider to adjust the retained purchase price.
+ * Stats are computed over every matching sale (whole postal code, or a radius
+ * around the exact address). Includes a map with a pin per sale + the subject.
  */
 export function SaleComps() {
-  const { a, d, comps, saleComps, saleCompsLoading, set } = useApp();
+  const { a, d, comps, saleComps, saleCompsLoading, set, property, radiusKm, setRadiusKm, setExactAddress } =
+    useApp();
   const perM2 = saleComps.map((c) => c.pricePerM2);
-  // Suggested price = median €/m² of comparable sales × this bien's surface.
   const suggested = Math.round(comps.salePerM2.median * a.surface);
+
+  const [addr, setAddr] = useState(property.address || "");
+  const [geoStatus, setGeoStatus] = useState<"idle" | "loading" | "error">("idle");
+  const located = property.latitude != null && property.longitude != null;
+  const showDist = radiusKm != null;
+
+  const locate = async () => {
+    if (!addr.trim()) return;
+    setGeoStatus("loading");
+    const r = await setExactAddress(addr.trim());
+    setGeoStatus(r ? "idle" : "error");
+    if (r && radiusKm == null) setRadiusKm(1); // switch to radius mode once located
+  };
+
+  const hasMap = located || saleComps.some((c) => c.lat != null);
 
   return (
     <Card>
       <CardTitle
         hint={
           saleComps.length
-            ? `${saleComps.length} ventes réelles (DVF 2025) — même code postal`
+            ? `${saleComps.length} ventes réelles (DVF 2025) — ${
+                radiusKm != null ? `rayon de ${radiusKm} km` : "même code postal"
+              }`
             : "Ventes réelles enregistrées (DVF 2025)"
         }
         right={
@@ -77,6 +107,80 @@ export function SaleComps() {
         </Badge>
       </div>
 
+      {/* Exact address + radius controls */}
+      <div className="mb-4 rounded-xl border border-line bg-white px-4 py-3">
+        <div className="flex flex-wrap items-end gap-3">
+          <label className="min-w-[220px] flex-1">
+            <span className="mb-1 block text-[12px] font-medium text-muted">
+              Adresse exacte du bien (pour la carte)
+            </span>
+            <input
+              type="text"
+              value={addr}
+              placeholder="12 rue de la Paix, 75002 Paris"
+              onChange={(e) => setAddr(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && locate()}
+              className="w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition focus:border-navy-400 focus:ring-2 focus:ring-navy-100"
+            />
+          </label>
+          <button
+            onClick={locate}
+            disabled={geoStatus === "loading" || !addr.trim()}
+            className="rounded-lg bg-navy-600 px-3.5 py-2 text-[13px] font-semibold text-white transition hover:bg-navy-700 disabled:opacity-50"
+          >
+            {geoStatus === "loading" ? "Localisation…" : "Localiser"}
+          </button>
+        </div>
+        {geoStatus === "error" && (
+          <p className="mt-2 text-[12px] text-bad">Adresse introuvable — précisez la rue et la ville.</p>
+        )}
+        {located && (
+          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
+            <span className="text-[12px] text-muted">Comparables :</span>
+            {RADII.map((r) => (
+              <button
+                key={r}
+                onClick={() => setRadiusKm(r)}
+                className={`rounded-full px-2.5 py-1 text-[12px] font-medium transition ${
+                  radiusKm === r
+                    ? "bg-navy-600 text-white"
+                    : "border border-navy-200 bg-white text-navy-600 hover:bg-navy-50"
+                }`}
+              >
+                {r} km
+              </button>
+            ))}
+            <button
+              onClick={() => setRadiusKm(null)}
+              className={`rounded-full px-2.5 py-1 text-[12px] font-medium transition ${
+                radiusKm == null
+                  ? "bg-navy-600 text-white"
+                  : "border border-navy-200 bg-white text-navy-600 hover:bg-navy-50"
+              }`}
+            >
+              Tout le code postal
+            </button>
+          </div>
+        )}
+      </div>
+
+      {hasMap && (
+        <div className="mb-4">
+          <DvfMap
+            comps={saleComps}
+            subject={
+              located
+                ? { lat: property.latitude!, lon: property.longitude!, label: property.address }
+                : null
+            }
+            subjectPricePerM2={d.pricePerM2}
+          />
+          <p className="mt-1.5 text-[11px] text-faint">
+            Points verts : moins chers au m² que ce bien · rouges : plus chers · bleu : ce bien.
+          </p>
+        </div>
+      )}
+
       {saleCompsLoading ? (
         <div className="flex items-center gap-2.5 py-4 text-[13px] text-muted">
           <span className="h-4 w-4 animate-spin rounded-full border-2 border-navy-200 border-t-navy-600" />
@@ -84,26 +188,37 @@ export function SaleComps() {
         </div>
       ) : saleComps.length === 0 ? (
         <p className="text-[13px] text-muted">
-          Aucune vente enregistrée (DVF 2025) dans ce code postal.
+          Aucune vente enregistrée (DVF 2025) {radiusKm != null ? "dans ce rayon" : "dans ce code postal"}.
         </p>
       ) : (
-        <Table
-          head={["Adresse", "Date", "Prix", "Surface", "€/m²", "Pièces"]}
-          align={["left", "left", "right", "right", "right", "right"]}
-        >
-          {saleComps.map((c) => (
-            <tr key={c.id} className="transition hover:bg-slate-50/70">
-              <Td className="text-slate-600">{c.address || "—"}</Td>
-              <Td>{monthYear(c.soldOn)}</Td>
-              <Td right strong>{eur(c.price)}</Td>
-              <Td right>{c.surface} m²</Td>
-              <Td right className={c.pricePerM2 > d.pricePerM2 ? "!text-pos" : "!text-bad"}>
-                {int(c.pricePerM2)} €
-              </Td>
-              <Td right>{c.rooms ?? "—"}</Td>
-            </tr>
-          ))}
-        </Table>
+        <div className="max-h-[420px] overflow-y-auto">
+          <Table
+            head={
+              showDist
+                ? ["Adresse", "Date", "Prix", "Surface", "€/m²", "Pièces", "Distance"]
+                : ["Adresse", "Date", "Prix", "Surface", "€/m²", "Pièces"]
+            }
+            align={
+              showDist
+                ? ["left", "left", "right", "right", "right", "right", "right"]
+                : ["left", "left", "right", "right", "right", "right"]
+            }
+          >
+            {saleComps.map((c) => (
+              <tr key={c.id} className="transition hover:bg-slate-50/70">
+                <Td className="text-slate-600">{c.address || "—"}</Td>
+                <Td>{monthYear(c.soldOn)}</Td>
+                <Td right strong>{eur(c.price)}</Td>
+                <Td right>{c.surface} m²</Td>
+                <Td right className={c.pricePerM2 > d.pricePerM2 ? "!text-pos" : "!text-bad"}>
+                  {int(c.pricePerM2)} €
+                </Td>
+                <Td right>{c.rooms ?? "—"}</Td>
+                {showDist && <Td right>{c.distance != null ? `${c.distance.toFixed(1)} km` : "—"}</Td>}
+              </tr>
+            ))}
+          </Table>
+        </div>
       )}
     </Card>
   );

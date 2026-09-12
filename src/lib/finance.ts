@@ -347,6 +347,41 @@ export function cashFlowAt(a: Assumptions, key: keyof Assumptions, value: number
   return derive(withOverride(a, key, value)).monthlyCashFlow;
 }
 
+/** Monthly cash flow with several lever overrides applied together. */
+export function cashFlowWithOverrides(a: Assumptions, overrides: Partial<Assumptions>): number {
+  return derive({ ...a, ...overrides }).monthlyCashFlow;
+}
+
+/**
+ * Down payment that brings monthly cash flow to break-even, capped at a full
+ * cash purchase (loan → 0). Unlike the generic `downPayment` lever it isn't
+ * bounded by a fixed max, so it resolves even for expensive properties.
+ * `achievable` is false when even paying fully cash leaves the cash flow
+ * negative — i.e. more apport alone can't rescue the deal.
+ */
+export function apportForBreakEven(a: Assumptions): {
+  apport: number;
+  delta: number;
+  achievable: boolean;
+} {
+  const dv = derive(a);
+  const maxApport = Math.ceil(a.financeRenovation ? dv.totalProject : dv.acquisitionCost);
+  // Best case: enough apport to wipe out the loan entirely.
+  if (cashFlowWithOverrides(a, { downPayment: maxApport }) < 0) {
+    return { apport: maxApport, delta: Math.max(0, maxApport - a.downPayment), achievable: false };
+  }
+  // Cash flow rises monotonically as the apport shrinks the loan — bisect.
+  let lo = a.downPayment;
+  let hi = maxApport;
+  for (let i = 0; i < 60; i++) {
+    const mid = (lo + hi) / 2;
+    if (cashFlowWithOverrides(a, { downPayment: mid }) >= 0) hi = mid;
+    else lo = mid;
+  }
+  const apport = Math.min(maxApport, Math.ceil(hi / 1000) * 1000);
+  return { apport, delta: Math.max(0, apport - a.downPayment), achievable: true };
+}
+
 /**
  * Value of `key` that brings monthly cash flow to `target` (default 0).
  * Bisection — robust for every lever, monotonic or not in closed form.

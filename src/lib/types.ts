@@ -71,6 +71,9 @@ export type DvfComp = {
   pricePerM2: number;
   rooms: number | null;
   type: string; // "Appartement" | "Maison"
+  lat: number | null;
+  lon: number | null;
+  distance?: number | null; // km from the subject, set in radius mode
 };
 
 export type SaleComp = {

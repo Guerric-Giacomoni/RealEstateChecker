@@ -125,6 +125,31 @@ export function InfoDot({ text }: { text: string }) {
   );
 }
 
+/** Inline "i" tooltip, for sitting next to a form-field label (not a corner). */
+export function InfoTip({ text }: { text: string }) {
+  return (
+    <span className="group/fi relative inline-flex align-middle">
+      <button
+        type="button"
+        aria-label={text}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+        className="flex h-[14px] w-[14px] items-center justify-center rounded-full border border-navy-200 text-[9px] font-bold leading-none text-navy-400 transition hover:bg-navy-50 hover:text-navy-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-navy-300"
+      >
+        i
+      </button>
+      <span
+        role="tooltip"
+        className="pointer-events-none absolute left-0 top-[20px] z-30 w-56 rounded-lg border border-line bg-white px-3 py-2 text-left text-[11.5px] font-normal normal-case leading-relaxed tracking-normal text-slate-600 opacity-0 shadow-lg transition-opacity duration-150 group-hover/fi:opacity-100 group-focus-within/fi:opacity-100"
+      >
+        {text}
+      </span>
+    </span>
+  );
+}
+
 export function Stat({
   label,
   value,
@@ -267,6 +292,7 @@ export function NumberField({
   min,
   max,
   hint,
+  info,
   compact = false,
 }: {
   label: string;
@@ -277,6 +303,7 @@ export function NumberField({
   min?: number;
   max?: number;
   hint?: string;
+  info?: string;
   compact?: boolean;
 }) {
   return (
@@ -284,9 +311,12 @@ export function NumberField({
       {/* `mt-auto` pushes the label+input group to the bottom of a stretched
           grid cell, so inputs stay aligned when a neighbour's label wraps to
           two lines while the label still sits right above its box. */}
-      <div className="mt-auto mb-1 flex items-baseline justify-between">
-        <span className="text-[12px] font-medium text-muted">{label}</span>
-        {hint && <span className="text-[11px] text-faint">{hint}</span>}
+      <div className="mt-auto mb-1 flex items-baseline justify-between gap-2">
+        <span className="flex items-center gap-1 text-[12px] font-medium text-muted">
+          {label}
+          {info && <InfoTip text={info} />}
+        </span>
+        {hint && <span className="shrink-0 text-[11px] text-faint">{hint}</span>}
       </div>
       {/* The suffix sits in normal flow rather than absolutely positioned, so a
           long one ("%/an") can never collide with the right-aligned value. */}

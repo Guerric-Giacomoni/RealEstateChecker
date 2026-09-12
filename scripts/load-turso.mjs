@@ -19,7 +19,7 @@ if (!url || !authToken) {
 const local = new Database("data/dvf-2025.sqlite", { readonly: true });
 const remote = createClient({ url, authToken });
 
-const COLS = ["cp", "type", "price", "surface", "rooms", "month", "adresse", "ville"];
+const COLS = ["cp", "type", "price", "surface", "rooms", "month", "adresse", "ville", "lat", "lon"];
 const CHUNK = 500; // rows per INSERT statement
 const BATCH = 20; // statements per HTTP round trip
 const tuple = `(${COLS.map(() => "?").join(",")})`;
@@ -28,7 +28,7 @@ console.log("recreating schema…");
 await remote.execute("drop table if exists sales");
 await remote.execute(
   `create table sales (cp text, type text, price integer, surface integer,
-   rooms integer, month integer, adresse text, ville text)`,
+   rooms integer, month integer, adresse text, ville text, lat real, lon real)`,
 );
 
 const rows = local.prepare(`select ${COLS.join(",")} from sales`).all();

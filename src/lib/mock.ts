@@ -70,7 +70,7 @@ export const DEFAULTS: Assumptions = {
   // Exploitation
   monthlyRent: 745,
   vacancyRate: 8,
-  managementFeePct: 7,
+  managementFeePct: 0, // 0 % = gestion directe (par défaut)
   propertyTax: 850,
   condoCharges: 700,
   landlordInsurance: 150,
