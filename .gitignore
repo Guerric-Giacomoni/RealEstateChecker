@@ -43,3 +43,6 @@ next-env.d.ts
 
 # DVF data (SQLite + yearly CSVs) is hosted on Turso, not committed
 data/
+
+# Internal data-source notes — not committed
+instructions.md

@@ -65,7 +65,8 @@ export function Onboarding() {
             {property.type} {property.rooms} pièces — {property.surface} m²
           </div>
           <div className="text-[13px] text-muted">
-            {property.address}, {property.postalCode} {property.city}
+            {property.address ? `${property.address}, ` : ""}
+            {property.postalCode} {property.city}
           </div>
           <div className="ml-auto flex items-baseline gap-3">
             <span className="tnum text-[18px] font-semibold text-ink">
@@ -153,7 +154,7 @@ export function Onboarding() {
             title="Votre situation locative actuelle"
             subtitle="C'est la base de comparaison : ce que vous payez aujourd'hui pour vous loger."
           >
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-3">
               <NumberField
                 label="Loyer mensuel actuel"
                 value={draft.currentRent}
@@ -168,6 +169,14 @@ export function Onboarding() {
                 step={5}
                 suffix="€"
                 onChange={(v) => upd("currentRentCharges", v)}
+              />
+              <NumberField
+                label="Surface actuelle"
+                value={draft.currentSurface}
+                step={1}
+                suffix="m²"
+                onChange={(v) => upd("currentSurface", v)}
+                hint="pour comparer au m²"
               />
             </div>
 
@@ -568,7 +577,7 @@ function Prefilled({
   note: string;
   children: React.ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
   return (
     <div className="mt-5 rounded-[14px] border border-line bg-white">
       <button
@@ -584,7 +593,7 @@ function Prefilled({
           <div className="text-[11.5px] text-muted">{note}</div>
         </div>
         <span className="shrink-0 text-[12px] font-medium text-navy-600">
-          {open ? "Masquer" : "Ajuster"}
+          {open ? "Masquer" : "Voir plus"}
         </span>
       </button>
       {open && (

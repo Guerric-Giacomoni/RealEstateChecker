@@ -87,6 +87,7 @@ export const DEFAULTS: Assumptions = {
   // Acheter ou louer
   currentRent: 560,
   currentRentCharges: 60,
+  currentSurface: 40,
   currentRentGrowth: 2,
   investmentReturn: 4,
   sellingFeesPct: 6,

@@ -37,7 +37,7 @@ const SIM_LEVERS: {
   { key: "downPayment", label: "Apport", unit: "eur", min: 0, max: 250000, step: 1000 },
   { key: "interestRate", label: "Taux d'intérêt", unit: "pct", min: 0.5, max: 8, step: 0.05 },
   { key: "loanYears", label: "Durée du prêt", unit: "pct", min: 5, max: 30, step: 1, asYears: true },
-  { key: "currentRent", label: "Loyer actuel", unit: "eurMonth", min: 200, max: 3000, step: 10 },
+  { key: "monthlyRent", label: "Loyer d'un bien similaire", unit: "eurMonth", min: 300, max: 4000, step: 10 },
   { key: "propertyAppreciation", label: "Valorisation du bien", unit: "pct", min: -2, max: 8, step: 0.1 },
   { key: "investmentReturn", label: "Rendement des placements", unit: "pct", min: 0, max: 12, step: 0.1 },
   { key: "plannedStayYears", label: "Durée envisagée sur place", unit: "pct", min: 1, max: 30, step: 1, asYears: true },

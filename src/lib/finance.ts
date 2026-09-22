@@ -606,7 +606,11 @@ export type BuyRentYear = {
  * for housing invests the difference at `investmentReturn`. Comparing final
  * net wealth is then an apples-to-apples comparison.
  */
-export function buyVsRent(a: Assumptions, horizon = 30, opts?: { breakEvenOnly?: boolean }) {
+export function buyVsRent(
+  a: Assumptions,
+  horizon = 30,
+  opts?: { breakEvenOnly?: boolean; rent?: { start: number; growthPct: number } },
+) {
   const d = derive(a);
   const breakEvenOnly = opts?.breakEvenOnly === true;
 
@@ -614,13 +618,18 @@ export function buyVsRent(a: Assumptions, horizon = 30, opts?: { breakEvenOnly?:
   const upfront = d.cashInvested;
 
   const rMonthlyInvest = Math.pow(1 + a.investmentReturn / 100, 1 / 12) - 1;
-  const rMonthlyRentGrowth = Math.pow(1 + a.currentRentGrowth / 100, 1 / 12) - 1;
+  // Default "louer" leg = renting an equivalent of the bought property (its own
+  // market rent + estimated charges), so the comparison is like-for-like. Pass
+  // opts.rent to model a different rental (e.g. the user's current, smaller flat).
+  const rentStart = opts?.rent?.start ?? a.monthlyRent + Math.round(a.condoCharges / 12);
+  const rentGrowthPct = opts?.rent?.growthPct ?? a.rentGrowth;
+  const rMonthlyRentGrowth = Math.pow(1 + rentGrowthPct / 100, 1 / 12) - 1;
   const rMonthlyAppreciation = Math.pow(1 + a.propertyAppreciation / 100, 1 / 12) - 1;
   const rMonthlyExpGrowth = Math.pow(1 + a.expenseGrowth / 100, 1 / 12) - 1;
 
   let renterPot = upfront;
   let buyerPot = 0;
-  let rentMonthly = a.currentRent + a.currentRentCharges;
+  let rentMonthly = rentStart;
   let propertyValue = a.purchasePrice + d.renovation * 0.6;
 
   let cumRentPaid = 0;
@@ -736,7 +745,7 @@ export const BR_LEVERS: Lever[] = [
   { key: "purchasePrice", label: "Prix d'achat", unit: "eur", better: -1, min: 40000, max: 400000, step: 1000 },
   { key: "interestRate", label: "Taux d'intérêt", unit: "pct", better: -1, min: 0.5, max: 8, step: 0.05 },
   { key: "propertyAppreciation", label: "Valorisation du bien", unit: "pct", better: 1, min: -2, max: 8, step: 0.1 },
-  { key: "currentRent", label: "Loyer actuel", unit: "eurMonth", better: 1, min: 200, max: 3000, step: 10 },
+  { key: "monthlyRent", label: "Loyer d'un bien similaire", unit: "eurMonth", better: 1, min: 300, max: 4000, step: 10 },
   { key: "renovationBudget", label: "Montant des travaux", unit: "eur", better: -1, min: 0, max: 120000, step: 500 },
   { key: "sellingFeesPct", label: "Frais de revente", unit: "pct", better: -1, min: 0, max: 12, step: 0.5 },
   { key: "investmentReturn", label: "Rendement des placements", unit: "pct", better: -1, min: 0, max: 12, step: 0.1 },
@@ -771,8 +780,8 @@ export function brSensitivityTable(a: Assumptions): BrSensitivityRow[] {
     { key: "interestRate", label: "Taux +1 pt", value: a.interestRate + 1, unit: "pct" },
     { key: "propertyAppreciation", label: "Valorisation +1 pt", value: a.propertyAppreciation + 1, unit: "pct" },
     { key: "propertyAppreciation", label: "Valorisation −1 pt", value: a.propertyAppreciation - 1, unit: "pct" },
-    { key: "currentRent", label: "Loyer actuel +10 %", value: a.currentRent * 1.1, unit: "eurMonth" },
-    { key: "currentRent", label: "Loyer actuel −10 %", value: a.currentRent * 0.9, unit: "eurMonth" },
+    { key: "monthlyRent", label: "Loyer similaire +10 %", value: a.monthlyRent * 1.1, unit: "eurMonth" },
+    { key: "monthlyRent", label: "Loyer similaire −10 %", value: a.monthlyRent * 0.9, unit: "eurMonth" },
     { key: "downPayment", label: "Apport +20 000 €", value: a.downPayment + 20000, unit: "eur" },
     { key: "investmentReturn", label: "Placements +2 pts", value: a.investmentReturn + 2, unit: "pct" },
   ];

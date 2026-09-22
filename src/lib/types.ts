@@ -42,6 +42,7 @@ export type Assumptions = {
   // --- Acheter ou louer ---
   currentRent: number;
   currentRentCharges: number;
+  currentSurface: number; // m² of the current rental (for €/m² context)
   currentRentGrowth: number; // %/yr
   investmentReturn: number; // %/yr on capital kept invested
   sellingFeesPct: number;
