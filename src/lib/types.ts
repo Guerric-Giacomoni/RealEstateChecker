@@ -167,6 +167,21 @@ export type PriceHistory = {
   latestVolume: number | null;
 };
 
+/** A lycée (général & technologique) with its bac results, from data.education. */
+export type Lycee = {
+  uai: string;
+  name: string;
+  sector: string; // "public" | "privé sous contrat" | "privé hors contrat"
+  passRate: number | null; // taux de réussite au bac, %
+  mentionRate: number | null; // % de mentions
+  candidates: number | null; // présents (candidats)
+  addedValue: number | null; // valeur ajoutée (réussite vs attendu)
+  year: number;
+  address: string | null; // from the annuaire (by UAI)
+  lat: number | null;
+  lon: number | null;
+};
+
 /** Delinquency statistics for a commune, from SSMSI (data.gouv). */
 export type CrimeStats = {
   year: number;

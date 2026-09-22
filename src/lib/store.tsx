@@ -18,6 +18,7 @@ import type {
   CrimeStats,
   DvfComp,
   GeoRisks,
+  Lycee,
   MarketStats,
   PriceHistory,
   Profile,
@@ -90,6 +91,17 @@ async function fetchPriceHistory(code: string): Promise<PriceHistory | null> {
     return await res.json();
   } catch {
     return null;
+  }
+}
+
+/** Fetch lycées + bac results (Éducation nationale) for a commune code. */
+async function fetchSchools(code: string): Promise<Lycee[]> {
+  try {
+    const res = await fetch(`/api/schools/${code}`);
+    if (!res.ok) return [];
+    return (await res.json()).lycees ?? [];
+  } catch {
+    return [];
   }
 }
 
@@ -205,6 +217,10 @@ type Ctx = {
   crime: CrimeStats | null;
   /** True while the SSMSI lookup is in flight. */
   crimeLoading: boolean;
+  /** Lycées (GT) + bac results for the commune. */
+  schools: Lycee[];
+  /** True while the Éducation nationale lookup is in flight. */
+  schoolsLoading: boolean;
   /** Yearly average €/m² (DVF indicators) for the commune; null until loaded. */
   priceHistory: PriceHistory | null;
   /** True while the price-history lookup is in flight. */
@@ -253,6 +269,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [crimeLoading, setCrimeLoading] = useState(false);
   const [priceHistory, setPriceHistory] = useState<PriceHistory | null>(null);
   const [priceLoading, setPriceLoading] = useState(false);
+  const [schools, setSchools] = useState<Lycee[]>([]);
+  const [schoolsLoading, setSchoolsLoading] = useState(false);
   const [risks, setRisks] = useState<GeoRisks | null>(null);
   const [risksLoading, setRisksLoading] = useState(false);
   const [profile, setProfileState] = useState<Profile | null>(null);
@@ -466,11 +484,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setCrimeLoading(false);
         setPriceHistory(null);
         setPriceLoading(false);
+        setSchools([]);
+        setSchoolsLoading(false);
         return;
       }
       setMarketLoading(true);
       setCrimeLoading(true);
       setPriceLoading(true);
+      setSchoolsLoading(true);
       fetchMarketStats(code).then((stats) => {
         if (cancelled) return;
         setMarketStats(stats);
@@ -485,6 +506,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (cancelled) return;
         setPriceHistory(p);
         setPriceLoading(false);
+      });
+      fetchSchools(code).then((s) => {
+        if (cancelled) return;
+        setSchools(s);
+        setSchoolsLoading(false);
       });
     })();
     return () => {
@@ -588,6 +614,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     crimeLoading,
     priceHistory,
     priceLoading,
+    schools,
+    schoolsLoading,
     risks,
     risksLoading,
     startScrape,

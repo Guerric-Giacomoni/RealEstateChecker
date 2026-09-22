@@ -44,6 +44,31 @@
   --radius-card: 14px;
 }
 
+/* PDF export — each tab on its own A4 page (triggered by "Exporter"). */
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+  .app-root {
+    display: none !important;
+  }
+  .export-overlay {
+    position: static !important;
+    overflow: visible !important;
+    z-index: auto !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .export-page {
+    break-after: page;
+  }
+  .export-page:last-child {
+    break-after: auto;
+  }
+}
+
 html,
 body {
   background: var(--color-canvas);

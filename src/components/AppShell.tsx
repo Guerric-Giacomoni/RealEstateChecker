@@ -37,9 +37,89 @@ export function AppShell() {
 
 /* ================================================================== */
 
+/**
+ * Rasterise each `.export-page` (tab) and place it on its own A4 page, then
+ * download the PDF directly. Leaflet maps are skipped (cross-origin tiles can't
+ * be captured to a canvas).
+ */
+async function exportToPdf(filename: string) {
+  const [{ jsPDF }, html2canvas] = await Promise.all([
+    import("jspdf"),
+    import("html2canvas-pro").then((m) => m.default),
+  ]);
+  const pages = Array.from(document.querySelectorAll<HTMLElement>(".export-page"));
+  if (pages.length === 0) return;
+
+  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+  const pw = doc.internal.pageSize.getWidth();
+  const ph = doc.internal.pageSize.getHeight();
+  const margin = 8;
+  const cw = pw - margin * 2;
+
+  for (let i = 0; i < pages.length; i++) {
+    const canvas = await html2canvas(pages[i], {
+      scale: 2,
+      backgroundColor: "#ffffff",
+      useCORS: true,
+      logging: false,
+      ignoreElements: (n) => (n as HTMLElement).classList?.contains("leaflet-container"),
+    });
+    const img = canvas.toDataURL("image/jpeg", 0.9);
+    const ih = (canvas.height * cw) / canvas.width;
+
+    if (i > 0) doc.addPage();
+    let heightLeft = ih;
+    let position = 0;
+    doc.addImage(img, "JPEG", margin, position, cw, ih);
+    heightLeft -= ph;
+    while (heightLeft > 0) {
+      position = heightLeft - ih; // shift the image up onto the next page
+      doc.addPage();
+      doc.addImage(img, "JPEG", margin, position, cw, ih);
+      heightLeft -= ph;
+    }
+  }
+  doc.save(filename);
+}
+
+const renderTab = (id: TabId) =>
+  id === "bien" ? (
+    <TabBien />
+  ) : id === "rentabilite" ? (
+    <TabRentabilite />
+  ) : id === "acheter" ? (
+    <TabAcheterLouer />
+  ) : id === "marche" ? (
+    <TabMarche />
+  ) : (
+    <TabHypotheses />
+  );
+
 function Dashboard() {
-  const { profile, showOther, setShowOther } = useApp();
+  const { profile, showOther, setShowOther, property } = useApp();
   const isResidence = profile === "residence";
+  const [exporting, setExporting] = useState(false);
+
+  // Render every tab, wait for charts to settle, then build + download the PDF
+  // (one A4 page per tab) — no print dialog.
+  useEffect(() => {
+    if (!exporting) return;
+    let cancelled = false;
+    const slug = (property.city || "rapport").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    const t = setTimeout(async () => {
+      try {
+        await exportToPdf(`immocheck-${slug}.pdf`);
+      } catch (e) {
+        console.error("[export]", e);
+      } finally {
+        if (!cancelled) setExporting(false);
+      }
+    }, 1200);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [exporting, property.city]);
 
   const tabs = useMemo(() => {
     const primary: TabId = isResidence ? "acheter" : "rentabilite";
@@ -52,19 +132,20 @@ function Dashboard() {
   }, [isResidence, showOther]);
 
   const [tab, setTab] = useState<TabId>(isResidence ? "acheter" : "rentabilite");
-
-  // Keep the selection valid when the profile or the extra tab changes.
-  useEffect(() => {
-    if (!tabs.some((t) => t.id === tab)) setTab(isResidence ? "acheter" : "rentabilite");
-  }, [tabs, tab, isResidence]);
+  // Derived so a hidden/invalid selection falls back without a setState-in-effect.
+  const activeTab: TabId = tabs.some((t) => t.id === tab)
+    ? tab
+    : isResidence
+      ? "acheter"
+      : "rentabilite";
 
   const otherLabel = isResidence
     ? "Analyser aussi en investissement locatif"
     : "Comparer aussi acheter vs louer";
 
   return (
-    <div className="min-h-screen">
-      <TopBar />
+    <div className="app-root min-h-screen">
+      <TopBar onExport={() => setExporting(true)} exporting={exporting} />
       <SummaryStrip onJump={setTab} />
 
       {/* Tabs */}
@@ -72,7 +153,7 @@ function Dashboard() {
         <div className="mx-auto flex max-w-[1560px] items-center gap-4 px-5">
           <nav className="no-scrollbar flex gap-1 overflow-x-auto overflow-y-hidden">
             {tabs.map((t) => {
-              const active = t.id === tab;
+              const active = t.id === activeTab;
               return (
                 <button
                   key={t.id}
@@ -108,11 +189,7 @@ function Dashboard() {
           </aside>
 
           <div className="min-w-0">
-            {tab === "bien" && <TabBien />}
-            {tab === "rentabilite" && <TabRentabilite />}
-            {tab === "acheter" && <TabAcheterLouer />}
-            {tab === "marche" && <TabMarche />}
-            {tab === "hypotheses" && <TabHypotheses />}
+            {renderTab(activeTab)}
 
             {/* Masqué pour l'instant — remettre `true` pour réafficher. */}
             {false && <PartnersSection />}
@@ -125,13 +202,47 @@ function Dashboard() {
           revanche réels et se recalculent en direct à partir des hypothèses du projet.
         </footer>
       </main>
+
+      {exporting && <ExportDocument tabs={tabs} />}
     </div>
   );
 }
 
 /* ================================================================== */
 
-function TopBar() {
+/** Print-only document: every tab stacked, one A4 page each (see print CSS). */
+function ExportDocument({ tabs }: { tabs: { id: TabId; label: string; icon: string }[] }) {
+  const { property } = useApp();
+  return (
+    <div className="export-overlay fixed inset-0 z-[200] overflow-auto bg-white">
+      <div className="no-print sticky top-0 z-10 flex items-center gap-2 bg-navy-600 px-6 py-2 text-[13px] font-medium text-white">
+        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+        Génération du PDF… le téléchargement va démarrer automatiquement.
+      </div>
+      <div className="mx-auto max-w-[720px] px-6 py-6">
+        <div className="mb-5">
+          <div className="text-[20px] font-bold text-ink">Rapport ImmoCheck</div>
+          <div className="text-[13px] text-muted">
+            {property.type} — {property.address ? `${property.address}, ` : ""}
+            {property.postalCode} {property.city}
+          </div>
+        </div>
+        {tabs.map((t) => (
+          <section key={t.id} className="export-page mb-8">
+            <h2 className="mb-3 border-b border-line pb-1 text-[16px] font-semibold text-navy-700">
+              {t.icon} {t.label}
+            </h2>
+            {renderTab(t.id)}
+          </section>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ================================================================== */
+
+function TopBar({ onExport, exporting }: { onExport: () => void; exporting: boolean }) {
   const { restartOnboarding } = useApp();
 
   return (
@@ -152,14 +263,21 @@ function TopBar() {
         <UrlSearchBar variant="bar" />
 
         <div className="flex items-center gap-2">
+          {/* Masqué — remettre `true` pour réafficher « Mon projet ». */}
+          {false && (
+            <button
+              onClick={restartOnboarding}
+              className="rounded-lg border border-line px-3 py-2 text-[12.5px] font-medium text-slate-600 transition hover:bg-slate-50"
+            >
+              Mon projet
+            </button>
+          )}
           <button
-            onClick={restartOnboarding}
-            className="rounded-lg border border-line px-3 py-2 text-[12.5px] font-medium text-slate-600 transition hover:bg-slate-50"
+            onClick={onExport}
+            disabled={exporting}
+            className="rounded-lg border border-line px-3 py-2 text-[12.5px] font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-60"
           >
-            Mon projet
-          </button>
-          <button className="rounded-lg border border-line px-3 py-2 text-[12.5px] font-medium text-slate-600 transition hover:bg-slate-50">
-            Exporter
+            {exporting ? "Préparation…" : "Exporter"}
           </button>
         </div>
       </div>

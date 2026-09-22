@@ -1,13 +1,23 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useApp } from "@/lib/store";
 import { eur, eurM2, int, num, pct } from "@/lib/format";
-import { Badge, Bar, Card, CardTitle, Insight, Mock, MockBadge, Row, Table, Td } from "../ui";
+import { Badge, Bar, Card, CardTitle, Insight, Mock, MockBadge, Row, Table, Td, pctWidth } from "../ui";
 import { BarChart, LineChart } from "../charts";
 import { SaleComps } from "../SaleComps";
 
+const SchoolsMap = dynamic(() => import("../SchoolsMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[320px] items-center justify-center rounded-xl border border-line text-[13px] text-muted">
+      Chargement de la carte…
+    </div>
+  ),
+});
+
 export function TabMarche() {
-  const { a, d, market, comps, property, priceHistory, marketStats, marketLoading, crime, crimeLoading, risks, risksLoading } =
+  const { a, d, market, comps, property, priceHistory, marketStats, marketLoading, crime, crimeLoading, schools, schoolsLoading, risks, risksLoading } =
     useApp();
 
   // Real INSEE figures when loaded, else the mock market.
@@ -481,6 +491,119 @@ export function TabMarche() {
           </Card>
         </div>
       )}
+
+      {/* ---------------- Lycées (Éducation nationale) ---------------- */}
+      <Card>
+        <CardTitle hint="Résultats du bac (général & technologique) — Éducation nationale">
+          Lycées de la commune
+        </CardTitle>
+
+        {schoolsLoading ? (
+          <div className="flex items-center gap-2.5 py-4 text-[13px] text-muted">
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-navy-200 border-t-navy-600" />
+            Chargement des résultats du bac…
+          </div>
+        ) : schools.length === 0 ? (
+          <p className="text-[13px] text-muted">
+            Aucun lycée général ou technologique enregistré dans cette commune.
+          </p>
+        ) : (
+          <>
+            {schools.some((s) => s.lat != null) && (
+              <div className="mb-4">
+                <SchoolsMap
+                  schools={schools}
+                  subject={
+                    property.latitude != null && property.longitude != null
+                      ? {
+                          lat: property.latitude,
+                          lon: property.longitude,
+                          label: property.address || undefined,
+                        }
+                      : null
+                  }
+                />
+                <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-faint">
+                  <span className="flex items-center gap-1">
+                    <span className="h-2 w-2 rounded-full" style={{ background: "#2563eb" }} /> Public
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="h-2 w-2 rounded-full" style={{ background: "#7c3aed" }} /> Privé
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="h-2 w-2 rounded-full" style={{ background: "#15b796" }} /> Ce bien
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              {schools.map((s) => {
+                const pub = /public/i.test(s.sector);
+                return (
+                  <div key={s.uai} className="rounded-xl border border-line px-5 py-4">
+                    <div className="flex items-start justify-between gap-6">
+                      <div className="min-w-0">
+                        <div className="text-[16px] font-semibold text-ink">{s.name}</div>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                          <Badge tone={pub ? "info" : "neutral"}>{pub ? "PUBLIC" : "PRIVÉ"}</Badge>
+                          <span className="text-[12px] text-muted">Lycée GT</span>
+                          {s.mentionRate != null && (
+                            <span className="rounded-full bg-warn-soft px-2 py-0.5 text-[11px] font-semibold text-warn">
+                              {s.mentionRate} % mentions
+                            </span>
+                          )}
+                        </div>
+                        {s.address && (
+                          <div className="mt-2 text-[12px] text-muted">📍 {s.address}</div>
+                        )}
+                        <div className="mt-1 text-[11.5px] text-faint">
+                          {s.candidates ?? "—"} candidats · valeur ajoutée{" "}
+                          <span
+                            className={
+                              s.addedValue == null
+                                ? ""
+                                : s.addedValue > 0
+                                  ? "text-pos"
+                                  : s.addedValue < 0
+                                    ? "text-bad"
+                                    : ""
+                            }
+                          >
+                            {s.addedValue == null
+                              ? "—"
+                              : `${s.addedValue > 0 ? "+" : ""}${s.addedValue}`}
+                          </span>{" "}
+                          · session {s.year}
+                        </div>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <div className="tnum text-[28px] font-bold leading-none text-ink">
+                          {s.passRate != null ? `${s.passRate} %` : "—"}
+                        </div>
+                        <div className="mt-2 h-2 w-[180px] max-w-full overflow-hidden rounded-full bg-slate-100">
+                          <div
+                            className="h-full rounded-full bg-pos"
+                            style={{ width: `${pctWidth(s.passRate ?? 0, 100)}%` }}
+                          />
+                        </div>
+                        <div className="mt-1 text-[10.5px] uppercase tracking-wide text-faint">
+                          Réussite bac
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <p className="mt-3 text-[11px] leading-relaxed text-faint">
+              Réussite = taux d&apos;obtention du bac. Valeur ajoutée = écart à la réussite attendue
+              compte tenu du profil des élèves (positif = le lycée fait mieux qu&apos;attendu).
+            </p>
+          </>
+        )}
+      </Card>
 
       {/* ---------------- Commodités ----------------
           Masqué — données d'exemple. Remettre `true` pour réafficher. */}
