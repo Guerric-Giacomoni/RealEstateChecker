@@ -182,6 +182,17 @@ export type Lycee = {
   lon: number | null;
 };
 
+/** A health establishment near the property, from FINESS. */
+export type Hospital = {
+  finess: string;
+  name: string;
+  category: string; // friendly label (Centre hospitalier, Clinique…)
+  city: string | null;
+  lat: number;
+  lon: number;
+  distance: number; // km from the subject
+};
+
 /** Delinquency statistics for a commune, from SSMSI (data.gouv). */
 export type CrimeStats = {
   year: number;

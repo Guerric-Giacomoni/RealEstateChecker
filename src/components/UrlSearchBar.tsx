@@ -62,7 +62,7 @@ export function UrlSearchBar({
             onChange={(e) => setUrl(e.target.value)}
             autoFocus={autoFocus}
             disabled={loading}
-            placeholder="Collez l'URL d'une annonce Leboncoin ou SeLoger"
+            placeholder="Collez l'URL d'une annonce SeLoger"
             className={`w-full rounded-lg border border-line bg-canvas text-ink outline-none transition placeholder:text-faint focus:border-navy-400 focus:bg-white focus:ring-2 focus:ring-navy-100 disabled:opacity-60 ${
               hero ? "py-3 pl-10 pr-3 text-[15px]" : "py-2 pl-9 pr-3 text-[13px]"
             }`}

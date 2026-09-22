@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useApp } from "@/lib/store";
 import { buyVsRent } from "@/lib/finance";
 import { eur, eurM2, eurMonthSigned, pct, years as fmtYears } from "@/lib/format";
@@ -96,30 +96,11 @@ const renderTab = (id: TabId) =>
   );
 
 function Dashboard() {
-  const { profile, showOther, setShowOther, property } = useApp();
+  const { profile, showOther, setShowOther } = useApp();
   const isResidence = profile === "residence";
+  // Opens a full-screen, responsive preview of the report; the PDF is only
+  // generated when the user taps the floating print button.
   const [exporting, setExporting] = useState(false);
-
-  // Render every tab, wait for charts to settle, then build + download the PDF
-  // (one A4 page per tab) — no print dialog.
-  useEffect(() => {
-    if (!exporting) return;
-    let cancelled = false;
-    const slug = (property.city || "rapport").toLowerCase().replace(/[^a-z0-9]+/g, "-");
-    const t = setTimeout(async () => {
-      try {
-        await exportToPdf(`immocheck-${slug}.pdf`);
-      } catch (e) {
-        console.error("[export]", e);
-      } finally {
-        if (!cancelled) setExporting(false);
-      }
-    }, 1200);
-    return () => {
-      cancelled = true;
-      clearTimeout(t);
-    };
-  }, [exporting, property.city]);
 
   const tabs = useMemo(() => {
     const primary: TabId = isResidence ? "acheter" : "rentabilite";
@@ -203,23 +184,63 @@ function Dashboard() {
         </footer>
       </main>
 
-      {exporting && <ExportDocument tabs={tabs} />}
+      {exporting && <ExportDocument tabs={tabs} onClose={() => setExporting(false)} />}
     </div>
   );
 }
 
 /* ================================================================== */
 
-/** Print-only document: every tab stacked, one A4 page each (see print CSS). */
-function ExportDocument({ tabs }: { tabs: { id: TabId; label: string; icon: string }[] }) {
+/** Responsive on-screen preview of the report. The PDF (one A4 page per tab)
+ *  is generated only when the floating print button is tapped. */
+function ExportDocument({
+  tabs,
+  onClose,
+}: {
+  tabs: { id: TabId; label: string; icon: string }[];
+  onClose: () => void;
+}) {
   const { property } = useApp();
+  const [generating, setGenerating] = useState(false);
+
+  const download = async () => {
+    if (generating) return;
+    setGenerating(true);
+    try {
+      const slug = (property.city || "rapport").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      await exportToPdf(`immocheck-${slug}.pdf`);
+    } catch (e) {
+      console.error("[export]", e);
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   return (
     <div className="export-overlay fixed inset-0 z-[200] overflow-auto bg-white">
-      <div className="no-print sticky top-0 z-10 flex items-center gap-2 bg-navy-600 px-6 py-2 text-[13px] font-medium text-white">
-        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-        Génération du PDF… le téléchargement va démarrer automatiquement.
+      {/* Preview toolbar */}
+      <div className="no-print sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-line bg-white/95 px-4 py-2 backdrop-blur sm:px-6">
+        <div className="min-w-0 truncate text-[13px] font-medium text-ink">
+          Aperçu du rapport · {tabs.length} onglet{tabs.length > 1 ? "s" : ""}
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            onClick={download}
+            disabled={generating}
+            className="hidden rounded-lg bg-navy-600 px-3 py-1.5 text-[12.5px] font-semibold text-white transition hover:bg-navy-700 disabled:opacity-60 sm:inline-flex"
+          >
+            {generating ? "Génération…" : "Télécharger le PDF"}
+          </button>
+          <button
+            onClick={onClose}
+            className="rounded-lg border border-line px-3 py-1.5 text-[12.5px] font-medium text-slate-600 transition hover:bg-slate-50"
+          >
+            Fermer
+          </button>
+        </div>
       </div>
-      <div className="mx-auto max-w-[720px] px-6 py-6">
+
+      <div className="mx-auto w-full max-w-[860px] px-4 py-6 sm:px-6">
         <div className="mb-5">
           <div className="text-[20px] font-bold text-ink">Rapport ImmoCheck</div>
           <div className="text-[13px] text-muted">
@@ -236,6 +257,25 @@ function ExportDocument({ tabs }: { tabs: { id: TabId; label: string; icon: stri
           </section>
         ))}
       </div>
+
+      {/* Floating print / download button */}
+      <button
+        onClick={download}
+        disabled={generating}
+        aria-label="Télécharger le PDF"
+        title="Télécharger le PDF"
+        className="no-print fixed bottom-6 right-6 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-navy-600 text-white shadow-xl ring-4 ring-navy-600/15 transition hover:bg-navy-700 disabled:opacity-70"
+      >
+        {generating ? (
+          <span className="h-6 w-6 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+        ) : (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6">
+            <path d="M6 9V3h12v6" />
+            <path d="M6 18H4a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2" />
+            <rect x="6" y="14" width="12" height="7" rx="1" />
+          </svg>
+        )}
+      </button>
     </div>
   );
 }

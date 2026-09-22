@@ -7,18 +7,22 @@ import { Badge, Bar, Card, CardTitle, Insight, Mock, MockBadge, Row, Table, Td, 
 import { BarChart, LineChart } from "../charts";
 import { SaleComps } from "../SaleComps";
 
-const SchoolsMap = dynamic(() => import("../SchoolsMap"), {
-  ssr: false,
-  loading: () => (
-    <div className="flex h-[320px] items-center justify-center rounded-xl border border-line text-[13px] text-muted">
-      Chargement de la carte…
-    </div>
-  ),
-});
+const mapLoader = () => (
+  <div className="flex h-[320px] items-center justify-center rounded-xl border border-line text-[13px] text-muted">
+    Chargement de la carte…
+  </div>
+);
+const SchoolsMap = dynamic(() => import("../SchoolsMap"), { ssr: false, loading: mapLoader });
+const HospitalsMap = dynamic(() => import("../HospitalsMap"), { ssr: false, loading: mapLoader });
 
 export function TabMarche() {
-  const { a, d, market, comps, property, priceHistory, marketStats, marketLoading, crime, crimeLoading, schools, schoolsLoading, risks, risksLoading } =
+  const { a, d, market, comps, property, priceHistory, marketStats, marketLoading, crime, crimeLoading, schools, schoolsLoading, hospitals, hospitalsLoading, risks, risksLoading } =
     useApp();
+
+  const subjectPoint =
+    property.latitude != null && property.longitude != null
+      ? { lat: property.latitude, lon: property.longitude, label: property.address || undefined }
+      : null;
 
   // Real INSEE figures when loaded, else the mock market.
   const pop = marketStats?.population;
@@ -600,6 +604,67 @@ export function TabMarche() {
             <p className="mt-3 text-[11px] leading-relaxed text-faint">
               Réussite = taux d&apos;obtention du bac. Valeur ajoutée = écart à la réussite attendue
               compte tenu du profil des élèves (positif = le lycée fait mieux qu&apos;attendu).
+            </p>
+          </>
+        )}
+      </Card>
+
+      {/* ---------------- Hôpitaux (FINESS) ---------------- */}
+      <Card>
+        <CardTitle hint="Établissements de santé dans un rayon de 15 km — FINESS">
+          Hôpitaux &amp; cliniques à proximité
+        </CardTitle>
+
+        {hospitalsLoading ? (
+          <div className="flex items-center gap-2.5 py-4 text-[13px] text-muted">
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-navy-200 border-t-navy-600" />
+            Recherche des établissements de santé…
+          </div>
+        ) : hospitals.length === 0 ? (
+          <p className="text-[13px] text-muted">
+            Aucun hôpital ou clinique recensé dans un rayon de 15 km.
+          </p>
+        ) : (
+          <>
+            <div className="mb-4">
+              <HospitalsMap hospitals={hospitals} subject={subjectPoint} />
+              <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-faint">
+                <span className="flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full" style={{ background: "#ef4444" }} /> Hôpital
+                  / clinique
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full" style={{ background: "#15b796" }} /> Ce bien
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {hospitals.slice(0, 12).map((h) => (
+                <div
+                  key={h.finess}
+                  className="flex items-center justify-between gap-4 rounded-xl border border-line px-4 py-2.5"
+                >
+                  <div className="min-w-0">
+                    <div className="truncate text-[14px] font-semibold text-ink">{h.name}</div>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11.5px]">
+                      <span className="rounded-full bg-bad-soft px-2 py-0.5 font-medium text-bad">
+                        {h.category}
+                      </span>
+                      {h.city && <span className="text-muted">{h.city}</span>}
+                    </div>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <div className="tnum text-[15px] font-semibold text-navy-700">
+                      {h.distance.toFixed(1)} km
+                    </div>
+                    <div className="text-[10.5px] uppercase tracking-wide text-faint">distance</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="mt-3 text-[11px] leading-relaxed text-faint">
+              Source FINESS (établissements sanitaires). Distance à vol d&apos;oiseau depuis le bien.
             </p>
           </>
         )}

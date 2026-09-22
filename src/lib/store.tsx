@@ -18,6 +18,7 @@ import type {
   CrimeStats,
   DvfComp,
   GeoRisks,
+  Hospital,
   Lycee,
   MarketStats,
   PriceHistory,
@@ -100,6 +101,17 @@ async function fetchSchools(code: string): Promise<Lycee[]> {
     const res = await fetch(`/api/schools/${code}`);
     if (!res.ok) return [];
     return (await res.json()).lycees ?? [];
+  } catch {
+    return [];
+  }
+}
+
+/** Fetch FINESS health establishments within a radius of a point. */
+async function fetchHospitals(lat: number, lon: number, radiusKm: number): Promise<Hospital[]> {
+  try {
+    const res = await fetch(`/api/hospitals?lat=${lat}&lon=${lon}&radius=${radiusKm}`);
+    if (!res.ok) return [];
+    return (await res.json()).hospitals ?? [];
   } catch {
     return [];
   }
@@ -229,6 +241,10 @@ type Ctx = {
   risks: GeoRisks | null;
   /** True while the Géorisques lookup is in flight. */
   risksLoading: boolean;
+  /** FINESS health establishments within ~15 km of the property. */
+  hospitals: Hospital[];
+  /** True while the FINESS lookup is in flight. */
+  hospitalsLoading: boolean;
   /**
    * Start scraping a listing URL. Resolves once the subject property is ready
    * (so the UI can advance); comparables keep loading in the background.
@@ -273,6 +289,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [schoolsLoading, setSchoolsLoading] = useState(false);
   const [risks, setRisks] = useState<GeoRisks | null>(null);
   const [risksLoading, setRisksLoading] = useState(false);
+  const [hospitals, setHospitals] = useState<Hospital[]>([]);
+  const [hospitalsLoading, setHospitalsLoading] = useState(false);
   const [profile, setProfileState] = useState<Profile | null>(null);
   const [onboarded, setOnboarded] = useState(false);
   const [showOther, setShowOther] = useState(false);
@@ -541,14 +559,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (!code || lat == null || lon == null) {
         setRisks(null);
         setRisksLoading(false);
+        setHospitals([]);
+        setHospitalsLoading(false);
         return;
       }
       setRisksLoading(true);
-      const r = await fetchRisks(code, lat, lon);
-      if (!cancelled) {
+      setHospitalsLoading(true);
+      fetchRisks(code, lat, lon).then((r) => {
+        if (cancelled) return;
         setRisks(r);
         setRisksLoading(false);
-      }
+      });
+      fetchHospitals(lat, lon, 15).then((h) => {
+        if (cancelled) return;
+        setHospitals(h);
+        setHospitalsLoading(false);
+      });
     })();
     return () => {
       cancelled = true;
@@ -618,6 +644,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     schoolsLoading,
     risks,
     risksLoading,
+    hospitals,
+    hospitalsLoading,
     startScrape,
     applyManualEntry,
     comps,

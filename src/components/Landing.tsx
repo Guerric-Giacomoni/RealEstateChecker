@@ -33,7 +33,7 @@ export function Landing({ onReady }: { onReady: () => void }) {
             Cette annonce est-elle une bonne affaire ?
           </h1>
           <p className="mx-auto mt-3 max-w-[520px] text-[15px] leading-relaxed text-muted">
-            Collez le lien d&apos;une annonce Leboncoin ou SeLoger : nous récupérons le prix,
+            Collez le lien d&apos;une annonce SeLoger : nous récupérons le prix,
             la surface, le DPE et les détails du bien, puis lançons l&apos;analyse complète.
           </p>
 
