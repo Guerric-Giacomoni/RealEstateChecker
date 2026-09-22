@@ -482,28 +482,31 @@ export function TabMarche() {
         </div>
       )}
 
-      {/* ---------------- Commodités ---------------- */}
-      <Card>
-        <CardTitle hint="Nombre d'établissements autour du bien" right={<MockBadge />}>
-          Commodités à proximité
-        </CardTitle>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-8">
-          {market.amenities.map((am) => (
-            <div key={am.label} className="rounded-xl border border-line px-3 py-3 text-center">
-              <div className="text-[20px] leading-none">{am.icon}</div>
-              <div className="tnum mt-2 text-[22px] font-semibold text-navy-700">
-                {am.within500}
+      {/* ---------------- Commodités ----------------
+          Masqué — données d'exemple. Remettre `true` pour réafficher. */}
+      {false && (
+        <Card>
+          <CardTitle hint="Nombre d'établissements autour du bien" right={<MockBadge />}>
+            Commodités à proximité
+          </CardTitle>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-8">
+            {market.amenities.map((am) => (
+              <div key={am.label} className="rounded-xl border border-line px-3 py-3 text-center">
+                <div className="text-[20px] leading-none">{am.icon}</div>
+                <div className="tnum mt-2 text-[22px] font-semibold text-navy-700">
+                  {am.within500}
+                </div>
+                <div className="text-[11.5px] text-muted">{am.label}</div>
+                <div className="mt-1 text-[10.5px] text-faint">{am.within1000} à 1 km</div>
               </div>
-              <div className="text-[11.5px] text-muted">{am.label}</div>
-              <div className="mt-1 text-[10.5px] text-faint">{am.within1000} à 1 km</div>
-            </div>
-          ))}
-        </div>
-        <p className="mt-4 border-t border-line pt-3 text-[11.5px] text-faint">
-          Comptages dans un rayon de 500 m à pied. Un secteur dense en commerces et en écoles
-          soutient la demande locative et limite la vacance.
-        </p>
-      </Card>
+            ))}
+          </div>
+          <p className="mt-4 border-t border-line pt-3 text-[11.5px] text-faint">
+            Comptages dans un rayon de 500 m à pied. Un secteur dense en commerces et en écoles
+            soutient la demande locative et limite la vacance.
+          </p>
+        </Card>
+      )}
     </div>
   );
 }
