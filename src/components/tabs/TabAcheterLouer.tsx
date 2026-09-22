@@ -142,7 +142,7 @@ export function TabAcheterLouer() {
             rentAct: modelActual.rows[i].rentWealth,
           }))}
           series={[
-            { key: "buy", label: "Acheter", color: "#1d4477", area: true },
+            { key: "buy", label: "Acheter", color: "#108971", area: true },
             { key: "rentSim", label: "Louer similaire", color: "#b45309" },
             { key: "rentAct", label: "Louer actuel", color: "#94a3b8", dashed: true },
           ]}

@@ -216,7 +216,7 @@ export function Sparkline({
         ? "#be123c"
         : tone === "warn"
           ? "#b45309"
-          : "#1d4477";
+          : "#108971";
   const w = 200;
   const min = Math.min(...values);
   const max = Math.max(...values);

@@ -166,11 +166,11 @@ export function LineChart({
               x2={px(markerX)}
               y1={PAD.t}
               y2={H - PAD.b}
-              stroke="#1d4477"
+              stroke="#108971"
               strokeWidth={1.2}
               strokeDasharray="4 4"
             />
-            <circle cx={px(markerX)} cy={PAD.t + 6} r={3} fill="#1d4477" />
+            <circle cx={px(markerX)} cy={PAD.t + 6} r={3} fill="#108971" />
             {markerLabel && (
               <text
                 x={px(markerX) + 6}
@@ -496,7 +496,7 @@ export function ScatterStrip({
 export function Gauge({
   value,
   max = 100,
-  tone = "#1d4477",
+  tone = "#108971",
   size = 150,
 }: {
   value: number;

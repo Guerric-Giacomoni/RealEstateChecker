@@ -82,7 +82,7 @@ export default function DvfMap({
           <CircleMarker
             center={[subject.lat, subject.lon]}
             radius={9}
-            pathOptions={{ color: "#1d4477", fillColor: "#3765a5", fillOpacity: 0.95, weight: 3 }}
+            pathOptions={{ color: "#108971", fillColor: "#15b796", fillOpacity: 0.95, weight: 3 }}
           >
             <Popup>
               <div className="text-[12px] font-semibold">{subject.label || "Ce bien"}</div>

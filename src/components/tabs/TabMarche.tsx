@@ -106,7 +106,7 @@ export function TabMarche() {
           </CardTitle>
           <LineChart
             data={priceChart}
-            series={[{ key: "value", label: "Prix moyen €/m²", color: "#1d4477", area: true }]}
+            series={[{ key: "value", label: "Prix moyen €/m²", color: "#108971", area: true }]}
             yFormat={(v) => `${int(v)} €`}
             legend={false}
             height={220}
@@ -182,7 +182,7 @@ export function TabMarche() {
               vacancy: market.vacancyHistory[i]?.value ?? 0,
             }))}
             series={[
-              { key: "rent", label: "Loyer €/m²", color: "#1d4477", area: true },
+              { key: "rent", label: "Loyer €/m²", color: "#108971", area: true },
               { key: "vacancy", label: "Vacance %", color: "#b45309", dashed: true },
             ]}
             yFormat={(v) => num(v, 1)}
@@ -225,7 +225,7 @@ export function TabMarche() {
               label: p.label,
               value: p.value,
             }))}
-            series={[{ key: "value", label: "Habitants", color: "#3765a5", area: true }]}
+            series={[{ key: "value", label: "Habitants", color: "#15b796", area: true }]}
             yFormat={(v) => int(v)}
             legend={false}
             height={200}
@@ -453,8 +453,8 @@ export function TabMarche() {
                 dept: c.dept,
               }))}
               series={[
-                { key: "commune", label: "Commune", color: "#1d4477" },
-                { key: "dept", label: "Département", color: "#8daed9" },
+                { key: "commune", label: "Commune", color: "#108971" },
+                { key: "dept", label: "Département", color: "#76efd7" },
               ]}
               yFormat={(v) => num(v, 1)}
               height={210}

@@ -869,7 +869,7 @@ function RentalMarket() {
             vacancy: market.vacancyHistory[i]?.value ?? 0,
           }))}
           series={[
-            { key: "rent", label: "Loyer €/m²", color: "#1d4477", area: true },
+            { key: "rent", label: "Loyer €/m²", color: "#108971", area: true },
             { key: "vacancy", label: "Vacance %", color: "#b45309", dashed: true },
           ]}
           yFormat={(v) => num(v, 1)}
@@ -986,7 +986,7 @@ function Projection() {
           cashFlow: r.cashFlow,
           cumulative: r.cumulativeCashFlow,
         }))}
-        series={[{ key: "cashFlow", label: "Cash-flow annuel", color: "#3765a5" }]}
+        series={[{ key: "cashFlow", label: "Cash-flow annuel", color: "#15b796" }]}
         lineSeries={{ key: "cumulative", label: "Cash-flow cumulé", color: "#be123c" }}
         yFormat={(v) => eur(v)}
         height={230}
@@ -1001,8 +1001,8 @@ function Projection() {
             loan: r.loanRemaining,
           }))}
           series={[
-            { key: "value", label: "Valeur du bien", color: "#8daed9" },
-            { key: "equity", label: "Capital accumulé", color: "#1d4477", area: true },
+            { key: "value", label: "Valeur du bien", color: "#76efd7" },
+            { key: "equity", label: "Capital accumulé", color: "#108971", area: true },
             { key: "loan", label: "Capital restant dû", color: "#b45309", dashed: true },
           ]}
           yFormat={(v) => eur(v)}
