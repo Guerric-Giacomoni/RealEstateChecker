@@ -27,7 +27,11 @@ export type Assumptions = {
   vacancyRate: number; // %
   managementFeePct: number; // % of collected rent
   propertyTax: number; // annual
-  condoCharges: number; // annual, owner share
+  condoCharges: number; // annual, owner share (apartments/studios)
+  /** House upkeep reserve, %/yr of price — replaces condo charges for houses. */
+  worksProvisionPct: number;
+  /** Listing is a house → use worksProvisionPct instead of condoCharges. */
+  isHouse: boolean;
   landlordInsurance: number; // annual
   unpaidRentInsurancePct: number; // % of collected rent
   maintenancePct: number; // % of collected rent

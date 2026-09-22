@@ -210,25 +210,14 @@ export function Onboarding() {
             subtitle="Le loyer est déduit des annonces comparables du quartier. Ajustez-le si vous avez une meilleure idée."
           >
             <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <NumberField
-                  label="Loyer mensuel visé"
-                  value={draft.monthlyRent}
-                  step={10}
-                  suffix="€"
-                  onChange={(v) => upd("monthlyRent", v)}
-                  hint={`suggéré ${eur(comps.suggestedRent)}`}
-                />
-                <input
-                  type="range"
-                  className="mt-3 w-full"
-                  min={Math.round(comps.suggestedRent * 0.6)}
-                  max={Math.round(comps.suggestedRent * 1.4)}
-                  step={5}
-                  value={draft.monthlyRent}
-                  onChange={(e) => upd("monthlyRent", parseFloat(e.target.value))}
-                />
-              </div>
+              <NumberField
+                label="Loyer mensuel visé"
+                value={draft.monthlyRent}
+                step={10}
+                suffix="€"
+                onChange={(v) => upd("monthlyRent", v)}
+                hint={`suggéré ${eur(comps.suggestedRent)}`}
+              />
               <NumberField
                 label="Vacance locative"
                 value={draft.vacancyRate}
@@ -244,7 +233,11 @@ export function Onboarding() {
               note="Charges typiques d'un appartement de cette taille. Modifiables ici ou à tout moment dans l'onglet « Hypothèses du projet »."
             >
               <NumberField compact label="Taxe foncière" value={draft.propertyTax} step={50} suffix="€/an" hint="≈ 1 mois de loyer" onChange={(v) => upd("propertyTax", v)} />
-              <NumberField compact label="Charges de copropriété" value={draft.condoCharges} step={50} suffix="€/an" onChange={(v) => upd("condoCharges", v)} />
+              {draft.isHouse ? (
+                <NumberField compact label="Provision travaux" value={draft.worksProvisionPct} step={0.1} suffix="%/an" hint={`≈ ${eur(preview.buildingCharge)}/an`} onChange={(v) => upd("worksProvisionPct", v)} />
+              ) : (
+                <NumberField compact label="Charges de copropriété" value={draft.condoCharges} step={50} suffix="€/an" onChange={(v) => upd("condoCharges", v)} />
+              )}
               <NumberField compact label="Frais de gestion" value={draft.managementFeePct} step={0.5} suffix="%" hint="direct = 0 %" info="Commission d'une agence de gestion locative (mise en location, quittances, encaissement, relances), en % du loyer encaissé. 0 % en gestion directe (vous gérez vous-même)." onChange={(v) => upd("managementFeePct", v)} />
               <NumberField compact label="Entretien + provision travaux" value={draft.maintenancePct + draft.capexPct} step={0.5} suffix="%" onChange={(v) => { upd("maintenancePct", v * 0.625); upd("capexPct", v * 0.375); }} />
             </Prefilled>
@@ -299,15 +292,6 @@ export function Onboarding() {
                     suffix="€"
                     onChange={(v) => upd("renovationBudget", Math.max(0, v))}
                     hint="tous corps d'état"
-                  />
-                  <input
-                    type="range"
-                    className="mt-3 w-full"
-                    min={0}
-                    max={100000}
-                    step={500}
-                    value={draft.renovationBudget}
-                    onChange={(e) => upd("renovationBudget", parseFloat(e.target.value))}
                   />
                 </div>
 

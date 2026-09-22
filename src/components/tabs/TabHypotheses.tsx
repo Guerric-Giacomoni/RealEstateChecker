@@ -244,7 +244,7 @@ export function TabHypotheses() {
             <Row
               label="Coût mensuel en cas d'achat"
               value={eurMonth(
-                d.monthlyPayment + (a.propertyTax + a.condoCharges + a.landlordInsurance) / 12,
+                d.monthlyPayment + (a.propertyTax + d.buildingCharge + a.landlordInsurance) / 12,
               )}
               strong
             />
@@ -275,7 +275,11 @@ export function TabHypotheses() {
           <NumberField label="Loyer mensuel" value={a.monthlyRent} step={10} suffix="€" onChange={(v) => set("monthlyRent", v)} hint={`${pct(comps.rentVsComps)} vs suggéré`} />
           <NumberField label="Vacance locative" value={a.vacancyRate} step={0.5} suffix="%" onChange={(v) => set("vacancyRate", v)} />
           <NumberField label="Taxe foncière" value={a.propertyTax} step={50} suffix="€/an" onChange={(v) => set("propertyTax", v)} />
-          <NumberField label="Charges de copropriété" value={a.condoCharges} step={50} suffix="€/an" onChange={(v) => set("condoCharges", v)} />
+          {a.isHouse ? (
+            <NumberField label="Provision travaux" value={a.worksProvisionPct} step={0.1} suffix="%/an" onChange={(v) => set("worksProvisionPct", v)} hint={`≈ ${eur(d.buildingCharge)}/an`} info="Réserve pour l'entretien et les gros travaux d'une maison (toiture, façade, chauffage…), en % du prix par an. Remplace les charges de copropriété, inexistantes pour une maison." />
+          ) : (
+            <NumberField label="Charges de copropriété" value={a.condoCharges} step={50} suffix="€/an" onChange={(v) => set("condoCharges", v)} />
+          )}
           <NumberField label="Assurance PNO" value={a.landlordInsurance} step={10} suffix="€/an" onChange={(v) => set("landlordInsurance", v)} />
           <NumberField label="Assurance loyers impayés" value={a.unpaidRentInsurancePct} step={0.1} suffix="%" onChange={(v) => set("unpaidRentInsurancePct", v)} />
           <NumberField label="Frais de gestion" value={a.managementFeePct} step={0.5} suffix="%" onChange={(v) => set("managementFeePct", v)} hint="0 % si gestion directe" info="Commission d'une agence de gestion locative (mise en location, quittances, encaissement, relances), en % du loyer encaissé. 0 % en gestion directe (vous gérez vous-même)." />

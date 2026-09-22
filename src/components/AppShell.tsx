@@ -114,7 +114,8 @@ function Dashboard() {
             {tab === "marche" && <TabMarche />}
             {tab === "hypotheses" && <TabHypotheses />}
 
-            <PartnersSection />
+            {/* Masqué pour l'instant — remettre `true` pour réafficher. */}
+            {false && <PartnersSection />}
           </div>
         </div>
 

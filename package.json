@@ -11,6 +11,7 @@
   "dependencies": {
     "@libsql/client": "^0.17.4",
     "leaflet": "^1.9.4",
+    "lottie-react": "^2.4.1",
     "next": "16.3.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",

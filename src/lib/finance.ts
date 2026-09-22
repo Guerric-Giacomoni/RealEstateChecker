@@ -91,8 +91,14 @@ export function derive(a: Assumptions) {
   const maintenance = collectedRent * (a.maintenancePct / 100);
   const capex = collectedRent * (a.capexPct / 100);
 
+  // Recurring building charge: condo fees for a flat, or a works provision
+  // (%/yr of price) for a house — houses have no copropriété.
+  const buildingCharge = a.isHouse
+    ? Math.round((a.purchasePrice * a.worksProvisionPct) / 100)
+    : a.condoCharges;
+
   const fixedOpex =
-    a.propertyTax + a.condoCharges + a.landlordInsurance + a.otherCosts;
+    a.propertyTax + buildingCharge + a.landlordInsurance + a.otherCosts;
   const variableRate =
     (a.managementFeePct + a.unpaidRentInsurancePct + a.maintenancePct + a.capexPct) /
     100;
@@ -122,7 +128,10 @@ export function derive(a: Assumptions) {
 
   const opexBreakdown = [
     { label: "Taxe foncière", value: a.propertyTax },
-    { label: "Charges de copropriété", value: a.condoCharges },
+    {
+      label: a.isHouse ? "Provision travaux (maison)" : "Charges de copropriété",
+      value: buildingCharge,
+    },
     { label: "Assurance PNO", value: a.landlordInsurance },
     { label: "Assurance loyers impayés", value: unpaidRentInsurance },
     { label: "Frais de gestion", value: mgmtFees },
@@ -148,6 +157,7 @@ export function derive(a: Assumptions) {
     totalInterest,
     totalInsurance,
     totalCreditCost,
+    buildingCharge,
     cashInvested,
     annualRent,
     collectedRent,
@@ -314,7 +324,7 @@ function capitalize(s: string) {
 export type Lever = {
   key: keyof Assumptions;
   label: string;
-  unit: "eur" | "pct" | "eurMonth";
+  unit: "eur" | "pct" | "eurMonth" | "years";
   /** direction that improves cash flow: -1 lower is better, +1 higher is better */
   better: -1 | 1;
   min: number;
@@ -326,6 +336,7 @@ export const LEVERS: Lever[] = [
   { key: "purchasePrice", label: "Prix d'achat", unit: "eur", better: -1, min: 40000, max: 400000, step: 1000 },
   { key: "monthlyRent", label: "Loyer mensuel", unit: "eurMonth", better: 1, min: 300, max: 2500, step: 10 },
   { key: "interestRate", label: "Taux d'intérêt", unit: "pct", better: -1, min: 0.5, max: 8, step: 0.05 },
+  { key: "loanYears", label: "Durée du prêt", unit: "years", better: 1, min: 5, max: 30, step: 1 },
   { key: "downPayment", label: "Apport", unit: "eur", better: 1, min: 0, max: 250000, step: 1000 },
   { key: "renovationBudget", label: "Montant des travaux", unit: "eur", better: -1, min: 0, max: 120000, step: 500 },
   { key: "vacancyRate", label: "Vacance locative", unit: "pct", better: -1, min: 0, max: 30, step: 0.5 },
@@ -621,7 +632,7 @@ export function buyVsRent(
   // Default "louer" leg = renting an equivalent of the bought property (its own
   // market rent + estimated charges), so the comparison is like-for-like. Pass
   // opts.rent to model a different rental (e.g. the user's current, smaller flat).
-  const rentStart = opts?.rent?.start ?? a.monthlyRent + Math.round(a.condoCharges / 12);
+  const rentStart = opts?.rent?.start ?? a.monthlyRent + Math.round(d.buildingCharge / 12);
   const rentGrowthPct = opts?.rent?.growthPct ?? a.rentGrowth;
   const rMonthlyRentGrowth = Math.pow(1 + rentGrowthPct / 100, 1 / 12) - 1;
   const rMonthlyAppreciation = Math.pow(1 + a.propertyAppreciation / 100, 1 / 12) - 1;
@@ -641,7 +652,7 @@ export function buyVsRent(
   let breakEvenMonth: number | null = null;
 
   const monthlyOwnerBase =
-    (a.propertyTax + a.condoCharges + a.landlordInsurance) / 12;
+    (a.propertyTax + d.buildingCharge + a.landlordInsurance) / 12;
 
   // Amortise the loan iteratively — the solver runs this loop dozens of times
   // per keystroke, so no Math.pow inside it.

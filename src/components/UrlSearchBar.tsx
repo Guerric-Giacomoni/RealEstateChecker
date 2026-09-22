@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { useApp } from "@/lib/store";
+
+const AnalyseLoader = dynamic(() => import("./AnalyseLoader"), { ssr: false });
 
 type Variant = "hero" | "bar";
 
@@ -77,6 +80,8 @@ export function UrlSearchBar({
       </form>
 
       {status === "error" && <p className="mt-2 text-[12.5px] text-bad">{error}</p>}
+
+      {loading && <AnalyseLoader />}
     </div>
   );
 }

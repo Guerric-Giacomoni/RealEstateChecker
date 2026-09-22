@@ -32,8 +32,8 @@ export function TabAcheterLouer() {
   const buyingBetter = atSim.buyWealth >= atSim.rentWealth;
   const gap = Math.abs(atSim.buyWealth - atSim.rentWealth);
 
-  const monthlyBuy = d.monthlyPayment + (a.propertyTax + a.condoCharges + a.landlordInsurance) / 12;
-  const similarCharges = Math.round(a.condoCharges / 12);
+  const monthlyBuy = d.monthlyPayment + (a.propertyTax + d.buildingCharge + a.landlordInsurance) / 12;
+  const similarCharges = Math.round(d.buildingCharge / 12);
   const similarRent = a.monthlyRent + similarCharges;
   const actualRent = a.currentRent + a.currentRentCharges;
 

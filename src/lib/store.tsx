@@ -141,6 +141,12 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const POLL_INTERVAL_MS = 3000;
 const POLL_DEADLINE_MS = 240_000; // give up after ~4 min
 
+/** Broad house detection — villa, chalet, mas… count as houses, not flats. */
+const isHouseType = (type: string) =>
+  /maison|villa|ch[aâ]let|\bmas\b|ferme|propri[ée]t[ée]|pavillon|long[èe]re|manoir|b[aâ]tisse/i.test(
+    type || "",
+  );
+
 /** Fields the user types in when the URL import can't be used. */
 export type ManualEntry = {
   type: string; // "Appartement" | "Maison"
@@ -278,8 +284,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const applySubject = (p: Property, assumptions: Partial<Assumptions>) => {
         subjectApplied = true;
         setProperty(p);
-        setA((prev) => ({ ...prev, ...assumptions }));
-        setBaseline((prev) => ({ ...prev, ...assumptions })); // this is the reset target
+        const applied = { ...assumptions, isHouse: isHouseType(p.type) };
+        setA((prev) => ({ ...prev, ...applied }));
+        setBaseline((prev) => ({ ...prev, ...applied })); // this is the reset target
         if (!settled) {
           settled = true;
           resolve(); // subject is ready — the UI can advance
@@ -394,6 +401,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       purchasePrice: entry.price,
       surface: entry.surface,
       agencyFees,
+      isHouse: isHouseType(entry.type),
     };
     setA((prev) => ({ ...prev, ...entryValues }));
     setBaseline((prev) => ({ ...prev, ...entryValues })); // reset target

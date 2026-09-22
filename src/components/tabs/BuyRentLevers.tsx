@@ -13,9 +13,10 @@ function fmtBreakEven(v: number) {
   return v >= NEVER ? "jamais" : fmtYears(v);
 }
 
-function leverFormat(unit: "eur" | "pct" | "eurMonth", step: number) {
+function leverFormat(unit: "eur" | "pct" | "eurMonth" | "years", step: number) {
   if (unit === "pct") return (v: number) => pct(v, step < 0.5 ? 2 : 1);
   if (unit === "eurMonth") return (v: number) => eurMonth(v);
+  if (unit === "years") return (v: number) => `${Math.round(v)} ans`;
   return (v: number) => eur(v);
 }
 

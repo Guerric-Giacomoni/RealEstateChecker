@@ -73,6 +73,8 @@ export const DEFAULTS: Assumptions = {
   managementFeePct: 0, // 0 % = gestion directe (par défaut)
   propertyTax: 850,
   condoCharges: 700,
+  worksProvisionPct: 1, // %/yr of price for houses (provision travaux)
+  isHouse: false, // demo listing is an apartment
   landlordInsurance: 150,
   unpaidRentInsurancePct: 2.5,
   maintenancePct: 5,

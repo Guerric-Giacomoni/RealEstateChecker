@@ -280,14 +280,21 @@ function Simulator() {
       </div>
 
       <div className="space-y-3.5">
-        {LEVERS.map((l) => {
+        {LEVERS.map((l0) => {
+          // A house has no copropriété — swap that slider for a works provision (%).
+          const l =
+            a.isHouse && l0.key === "condoCharges"
+              ? ({ ...l0, key: "worksProvisionPct", label: "Provision travaux", unit: "pct", min: 0, max: 5, step: 0.1 } as typeof l0)
+              : l0;
           const value = a[l.key] as number;
           const fmt =
             l.unit === "pct"
               ? (v: number) => pct(v, l.step < 0.5 ? 2 : 1)
               : l.unit === "eurMonth"
                 ? (v: number) => eurMonth(v)
-                : (v: number) => eur(v);
+                : l.unit === "years"
+                  ? (v: number) => `${Math.round(v)} ans`
+                  : (v: number) => eur(v);
           return (
             <div key={l.key}>
               <div className="mb-1 flex items-baseline justify-between">
@@ -360,6 +367,8 @@ function Thresholds() {
     return LEVERS.map((l) => {
       // The apport gets its own always-present card (see below), uncapped.
       if (l.key === "downPayment") return null;
+      // A house has no copropriété — that lever is inert here.
+      if (a.isHouse && l.key === "condoCharges") return null;
       const target = solveThreshold(a, l);
       if (target === null) return null;
       const current = a[l.key] as number;
@@ -368,7 +377,9 @@ function Thresholds() {
           ? (v: number) => pct(v, 2)
           : l.unit === "eurMonth"
             ? (v: number) => eurMonth(v)
-            : (v: number) => eur(v);
+            : l.unit === "years"
+              ? (v: number) => `${Math.round(v)} ans`
+              : (v: number) => eur(v);
       const delta = target - current;
       // Only meaningful when the move is in the improving direction.
       if (l.better === -1 && delta >= 0) return null;
