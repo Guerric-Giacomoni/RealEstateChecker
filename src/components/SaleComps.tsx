@@ -20,38 +20,62 @@ const RADII = [0.5, 1, 2, 5];
 
 /**
  * Real DVF "Ventes comparables" card, shared by the Le bien and Marché tabs.
- * Stats are computed over every matching sale (whole postal code, or a radius
- * around the exact address). Includes a map with a pin per sale + the subject.
+ * Stats are computed over the comparable set — the whole postal code, a radius
+ * around the exact address, or a free-form zone drawn on the map.
  */
 export function SaleComps() {
-  const { a, d, comps, saleComps, saleCompsLoading, set, property, radiusKm, setRadiusKm, setExactAddress } =
-    useApp();
-  const perM2 = saleComps.map((c) => c.pricePerM2);
+  const {
+    a,
+    d,
+    comps,
+    saleComps,
+    visibleSaleComps,
+    saleCompsLoading,
+    set,
+    property,
+    radiusKm,
+    setRadiusKm,
+    drawnArea,
+    setDrawnArea,
+    setExactAddress,
+  } = useApp();
+
+  const perM2 = visibleSaleComps.map((c) => c.pricePerM2);
   const suggested = Math.round(comps.salePerM2.median * a.surface);
 
   const [addr, setAddr] = useState(property.address || "");
   const [geoStatus, setGeoStatus] = useState<"idle" | "loading" | "error">("idle");
+  const [mode, setMode] = useState<"radius" | "polygon">("radius");
   const located = property.latitude != null && property.longitude != null;
-  const showDist = radiusKm != null;
+  const showDist = mode === "radius" && radiusKm != null;
+
+  const selectMode = (m: "radius" | "polygon") => {
+    setMode(m);
+    if (m === "radius") setDrawnArea(null);
+    else setRadiusKm(null); // draw over the whole-sector set
+  };
 
   const locate = async () => {
     if (!addr.trim()) return;
     setGeoStatus("loading");
     const r = await setExactAddress(addr.trim());
     setGeoStatus(r ? "idle" : "error");
-    if (r && radiusKm == null) setRadiusKm(1); // switch to radius mode once located
+    if (r && mode === "radius" && radiusKm == null) setRadiusKm(1);
   };
 
   const hasMap = located || saleComps.some((c) => c.lat != null);
+  const scope = drawnArea
+    ? "zone dessinée"
+    : radiusKm != null
+      ? `rayon de ${radiusKm} km`
+      : "même code postal";
 
   return (
     <Card>
       <CardTitle
         hint={
-          saleComps.length
-            ? `${saleComps.length} ventes réelles (DVF 2025) — ${
-                radiusKm != null ? `rayon de ${radiusKm} km` : "même code postal"
-              }`
+          visibleSaleComps.length
+            ? `${visibleSaleComps.length} ventes réelles (DVF 2025) — ${scope}`
             : "Ventes réelles enregistrées (DVF 2025)"
         }
         right={
@@ -107,7 +131,7 @@ export function SaleComps() {
         </Badge>
       </div>
 
-      {/* Exact address + radius controls */}
+      {/* Address + zone controls */}
       <div className="mb-4 rounded-xl border border-line bg-white px-4 py-3">
         <div className="flex flex-wrap items-end gap-3">
           <label className="min-w-[220px] flex-1">
@@ -134,46 +158,87 @@ export function SaleComps() {
         {geoStatus === "error" && (
           <p className="mt-2 text-[12px] text-bad">Adresse introuvable — précisez la rue et la ville.</p>
         )}
-        {located && (
-          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
-            <span className="text-[12px] text-muted">Comparables :</span>
-            {RADII.map((r) => (
-              <button
-                key={r}
-                onClick={() => setRadiusKm(r)}
-                className={`rounded-full px-2.5 py-1 text-[12px] font-medium transition ${
-                  radiusKm === r
-                    ? "bg-navy-600 text-white"
-                    : "border border-navy-200 bg-white text-navy-600 hover:bg-navy-50"
-                }`}
-              >
-                {r} km
-              </button>
-            ))}
+
+        {/* Mode: Rayon vs Zone dessinée */}
+        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
+          <span className="text-[12px] text-muted">Périmètre :</span>
+          {(["radius", "polygon"] as const).map((m) => (
             <button
-              onClick={() => setRadiusKm(null)}
-              className={`rounded-full px-2.5 py-1 text-[12px] font-medium transition ${
-                radiusKm == null
+              key={m}
+              onClick={() => selectMode(m)}
+              className={`rounded-full px-3 py-1 text-[12px] font-medium transition ${
+                mode === m
                   ? "bg-navy-600 text-white"
                   : "border border-navy-200 bg-white text-navy-600 hover:bg-navy-50"
               }`}
             >
-              Tout le code postal
+              {m === "radius" ? "Rayon" : "Zone dessinée"}
             </button>
-          </div>
-        )}
+          ))}
+
+          {mode === "radius" ? (
+            <>
+              <span className="ml-2 text-[11px] text-faint">
+                {located ? "autour de l'adresse" : "localisez l'adresse pour un rayon"}
+              </span>
+              {located &&
+                RADII.map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => setRadiusKm(r)}
+                    className={`rounded-full px-2.5 py-1 text-[12px] font-medium transition ${
+                      radiusKm === r
+                        ? "bg-navy-500 text-white"
+                        : "border border-navy-200 bg-white text-navy-600 hover:bg-navy-50"
+                    }`}
+                  >
+                    {r} km
+                  </button>
+                ))}
+              {located && (
+                <button
+                  onClick={() => setRadiusKm(null)}
+                  className={`rounded-full px-2.5 py-1 text-[12px] font-medium transition ${
+                    radiusKm == null
+                      ? "bg-navy-500 text-white"
+                      : "border border-navy-200 bg-white text-navy-600 hover:bg-navy-50"
+                  }`}
+                >
+                  Tout le code postal
+                </button>
+              )}
+            </>
+          ) : (
+            <>
+              <span className="ml-2 text-[11px] text-faint">
+                Tracez un polygone ou un rectangle sur la carte (outils en haut à droite).
+              </span>
+              {drawnArea && (
+                <button
+                  onClick={() => setDrawnArea(null)}
+                  className="rounded-full border border-navy-200 bg-white px-2.5 py-1 text-[12px] font-medium text-navy-600 transition hover:bg-navy-50"
+                >
+                  Effacer la zone
+                </button>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       {hasMap && (
         <div className="mb-4">
           <DvfMap
-            comps={saleComps}
+            comps={drawnArea && drawnArea.length >= 3 ? visibleSaleComps : saleComps}
             subject={
               located
                 ? { lat: property.latitude!, lon: property.longitude!, label: property.address }
                 : null
             }
             subjectPricePerM2={d.pricePerM2}
+            drawable={mode === "polygon"}
+            drawnArea={drawnArea}
+            onDraw={setDrawnArea}
           />
           <p className="mt-1.5 text-[11px] text-faint">
             Points verts : moins chers au m² que ce bien · rouges : plus chers · bleu : ce bien.
@@ -190,6 +255,10 @@ export function SaleComps() {
         <p className="text-[13px] text-muted">
           Aucune vente enregistrée (DVF 2025) {radiusKm != null ? "dans ce rayon" : "dans ce code postal"}.
         </p>
+      ) : visibleSaleComps.length === 0 ? (
+        <p className="text-[13px] text-muted">
+          Aucune vente dans la zone dessinée — agrandissez-la ou effacez-la.
+        </p>
       ) : (
         <div className="max-h-[420px] overflow-y-auto">
           <Table
@@ -204,7 +273,7 @@ export function SaleComps() {
                 : ["left", "left", "right", "right", "right", "right"]
             }
           >
-            {saleComps.map((c) => (
+            {visibleSaleComps.map((c) => (
               <tr key={c.id} className="transition hover:bg-slate-50/70">
                 <Td className="text-slate-600">{c.address || "—"}</Td>
                 <Td>{monthYear(c.soldOn)}</Td>

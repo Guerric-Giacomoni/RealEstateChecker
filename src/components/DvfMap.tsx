@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect } from "react";
-import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, CircleMarker, Polygon, Popup, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import "@geoman-io/leaflet-geoman-free";
+import "@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css";
 import type { DvfComp } from "@/lib/types";
 import { eur, int } from "@/lib/format";
 
 type Subject = { lat: number; lon: number; label?: string } | null;
+type Ring = [number, number][];
 
 /** Frame the map around all points whenever they change. */
 function FitBounds({ points }: { points: [number, number][] }) {
@@ -19,6 +22,52 @@ function FitBounds({ points }: { points: [number, number][] }) {
   return null;
 }
 
+/** Adds the Geoman polygon/rectangle toolbar; emits the drawn ring. The shape
+ *  itself is rendered by React (<Polygon>), so we drop Geoman's own layer. */
+function DrawControl({ onDraw }: { onDraw: (ring: Ring) => void }) {
+  const map = useMap();
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const pm = (map as any).pm;
+    if (!pm) return;
+    pm.addControls({
+      position: "topright",
+      drawCircle: false,
+      drawCircleMarker: false,
+      drawMarker: false,
+      drawPolyline: false,
+      drawText: false,
+      drawRectangle: true,
+      drawPolygon: true,
+      editMode: false,
+      dragMode: false,
+      cutPolygon: false,
+      rotateMode: false,
+      removalMode: false,
+    });
+    pm.setGlobalOptions({ snappable: false, allowSelfIntersection: false });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const onCreate = (e: any) => {
+      const ll = e.layer.getLatLngs();
+      const arr = Array.isArray(ll[0]) ? ll[0] : ll;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const ring: Ring = arr.map((p: any) => [p.lat, p.lng]);
+      map.removeLayer(e.layer);
+      onDraw(ring);
+    };
+    map.on("pm:create", onCreate);
+    return () => {
+      map.off("pm:create", onCreate);
+      try {
+        pm.removeControls();
+      } catch {
+        /* map already torn down */
+      }
+    };
+  }, [map, onDraw]);
+  return null;
+}
+
 /**
  * Comparable sales on an OpenStreetMap (Leaflet). Comps are dots coloured by
  * €/m² vs the subject (green cheaper, red pricier); the subject is a navy pin.
@@ -27,10 +76,16 @@ export default function DvfMap({
   comps,
   subject,
   subjectPricePerM2,
+  drawable = false,
+  drawnArea = null,
+  onDraw,
 }: {
   comps: DvfComp[];
   subject: Subject;
   subjectPricePerM2: number;
+  drawable?: boolean;
+  drawnArea?: Ring | null;
+  onDraw?: (ring: Ring) => void;
 }) {
   const located = comps.filter((c) => c.lat != null && c.lon != null);
   const points: [number, number][] = [
@@ -52,6 +107,13 @@ export default function DvfMap({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <FitBounds points={points} />
+        {drawable && onDraw && <DrawControl onDraw={onDraw} />}
+        {drawnArea && drawnArea.length >= 3 && (
+          <Polygon
+            positions={drawnArea}
+            pathOptions={{ color: "#108971", weight: 2, fillColor: "#15b796", fillOpacity: 0.08 }}
+          />
+        )}
 
         {located.map((c) => {
           const cheaper = c.pricePerM2 <= subjectPricePerM2;

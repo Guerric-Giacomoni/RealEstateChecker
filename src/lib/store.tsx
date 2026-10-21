@@ -171,6 +171,20 @@ const isHouseType = (type: string) =>
     type || "",
   );
 
+/** A user-drawn area on the map: a polygon ring of [lat, lon] points. */
+export type DrawnArea = [number, number][];
+
+/** Ray-casting point-in-polygon (ring = [[lat, lon], …]). */
+function pointInPolygon(lat: number, lon: number, ring: DrawnArea): boolean {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [yi, xi] = ring[i];
+    const [yj, xj] = ring[j];
+    if (yi > lat !== yj > lat && lon < ((xj - xi) * (lat - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
 /** Fields the user types in when the URL import can't be used. */
 export type ManualEntry = {
   type: string; // "Appartement" | "Maison"
@@ -216,9 +230,14 @@ type Ctx = {
   saleComps: DvfComp[];
   /** True while the DVF lookup is in flight. */
   saleCompsLoading: boolean;
+  /** DVF comps restricted to the drawn area (else all of saleComps). */
+  visibleSaleComps: DvfComp[];
   /** Radius (km) around the exact address for DVF comps; null = whole postal code. */
   radiusKm: number | null;
   setRadiusKm: (v: number | null) => void;
+  /** Polygon the user drew on the DVF map (null = none). */
+  drawnArea: DrawnArea | null;
+  setDrawnArea: (v: DrawnArea | null) => void;
   /** Geocode + set the exact address (adds the subject pin, enables radius). */
   setExactAddress: (query: string) => Promise<{ lat: number; lon: number } | null>;
   /** Local INSEE statistics (population, income…) for the commune; null until loaded. */
@@ -279,6 +298,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [saleCompsLoading, setSaleCompsLoading] = useState(false);
   // null = whole postal code; a number = radius (km) around the exact address.
   const [radiusKm, setRadiusKm] = useState<number | null>(null);
+  // A polygon the user drew on the DVF map (null = no drawn area). When set,
+  // the comparable set is restricted to sales inside it.
+  const [drawnArea, setDrawnArea] = useState<DrawnArea | null>(null);
   const [marketStats, setMarketStats] = useState<MarketStats | null>(null);
   const [marketLoading, setMarketLoading] = useState(false);
   const [crime, setCrime] = useState<CrimeStats | null>(null);
@@ -581,11 +603,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
   }, [property.codeInsee, property.latitude, property.longitude, property.postalCode, property.city]);
 
+  // DVF comps restricted to the drawn area (if any) — drives the map, table and
+  // all the sale stats below.
+  const visibleSaleComps = useMemo(
+    () =>
+      drawnArea && drawnArea.length >= 3
+        ? saleComps.filter(
+            (c) => c.lat != null && c.lon != null && pointInPolygon(c.lat, c.lon, drawnArea),
+          )
+        : saleComps,
+    [saleComps, drawnArea],
+  );
+
   const comps = useMemo(() => {
     // Sale stats come from real DVF sold transactions when available, else mock.
     const saleSource =
-      saleComps.length > 0
-        ? saleComps.map((c) => ({ price: c.price, surface: c.surface }))
+      visibleSaleComps.length > 0
+        ? visibleSaleComps.map((c) => ({ price: c.price, surface: c.surface }))
         : MARKET.saleComps;
     const salePerM2 = stats(saleSource.map((c) => c.price / c.surface));
     const salePrices = stats(saleSource.map((c) => c.price));
@@ -602,7 +636,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const rentVsComps =
       suggestedRent > 0 ? (a.monthlyRent / suggestedRent - 1) * 100 : 0;
     return { salePerM2, salePrices, rentPerM2, suggestedRent, priceVsComps, rentVsComps };
-  }, [a.surface, a.monthlyRent, d.pricePerM2, rentComparables, saleComps]);
+  }, [a.surface, a.monthlyRent, d.pricePerM2, rentComparables, visibleSaleComps]);
 
   const scoring = useMemo(
     () =>
@@ -631,8 +665,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     rentComparablesLoading,
     saleComps,
     saleCompsLoading,
+    visibleSaleComps,
     radiusKm,
     setRadiusKm,
+    drawnArea,
+    setDrawnArea,
     setExactAddress,
     marketStats,
     marketLoading,

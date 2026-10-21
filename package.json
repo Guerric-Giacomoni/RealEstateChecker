@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@geoman-io/leaflet-geoman-free": "^2.20.4",
     "@libsql/client": "^0.17.4",
     "html2canvas-pro": "^2.4.4",
     "jspdf": "^4.2.1",
