@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { UrlSearchBar } from "./UrlSearchBar";
 import { ManualEntryForm } from "./ManualEntryForm";
 
@@ -68,6 +69,18 @@ export function Landing({ onReady }: { onReady: () => void }) {
               </button>
             </div>
           )}
+
+          <div className="mt-10 border-t border-line pt-6">
+            <p className="text-[13px] text-muted">
+              Pas d&apos;annonce précise en tête ?
+            </p>
+            <Link
+              href="/explorer"
+              className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-navy-200 bg-white px-4 py-2 text-[13px] font-semibold text-navy-600 transition hover:bg-navy-50"
+            >
+              🗺️ Explorer une zone sur la carte
+            </Link>
+          </div>
         </div>
       </main>
     </div>

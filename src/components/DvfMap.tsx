@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { MapContainer, TileLayer, CircleMarker, Polygon, Popup, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "@geoman-io/leaflet-geoman-free";
 import "@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css";
+import type { CircleMarker as LCircleMarker } from "leaflet";
 import type { DvfComp } from "@/lib/types";
 import { eur, int } from "@/lib/format";
 
@@ -79,6 +80,9 @@ export default function DvfMap({
   drawable = false,
   drawnArea = null,
   onDraw,
+  selectedId = null,
+  onSelect,
+  highlightId = null,
 }: {
   comps: DvfComp[];
   subject: Subject;
@@ -86,8 +90,24 @@ export default function DvfMap({
   drawable?: boolean;
   drawnArea?: Ring | null;
   onDraw?: (ring: Ring) => void;
+  /** Comp currently selected (clicked) — rendered bigger. */
+  selectedId?: string | null;
+  /** Called when a comp pin is clicked. */
+  onSelect?: (id: string) => void;
+  /** Comp whose popup should open (e.g. the hovered table row). */
+  highlightId?: string | null;
 }) {
   const located = comps.filter((c) => c.lat != null && c.lon != null);
+
+  // Open the popup of the hovered table row's pin; close it on leave/change.
+  const markerRefs = useRef<Record<string, LCircleMarker | null>>({});
+  useEffect(() => {
+    const m = highlightId ? markerRefs.current[highlightId] : null;
+    m?.openPopup();
+    return () => {
+      m?.closePopup();
+    };
+  }, [highlightId]);
   const points: [number, number][] = [
     ...located.map((c) => [c.lat as number, c.lon as number] as [number, number]),
     ...(subject ? ([[subject.lat, subject.lon]] as [number, number][]) : []),
@@ -111,19 +131,36 @@ export default function DvfMap({
         {drawnArea && drawnArea.length >= 3 && (
           <Polygon
             positions={drawnArea}
-            pathOptions={{ color: "#108971", weight: 2, fillColor: "#15b796", fillOpacity: 0.08 }}
+            // Non-interactive so clicks pass through to the pins underneath.
+            pathOptions={{
+              color: "#108971",
+              weight: 2,
+              fillColor: "#15b796",
+              fillOpacity: 0.08,
+              interactive: false,
+            }}
           />
         )}
 
         {located.map((c) => {
           const cheaper = c.pricePerM2 <= subjectPricePerM2;
           const color = cheaper ? "#0f766e" : "#be123c";
+          const selected = c.id === selectedId;
           return (
             <CircleMarker
               key={c.id}
+              ref={(m) => {
+                markerRefs.current[c.id] = m;
+              }}
               center={[c.lat as number, c.lon as number]}
-              radius={6}
-              pathOptions={{ color, fillColor: color, fillOpacity: 0.7, weight: 1 }}
+              radius={selected ? 10 : 6}
+              pathOptions={{
+                color: selected ? "#0b5b4b" : color,
+                fillColor: color,
+                fillOpacity: selected ? 1 : 0.7,
+                weight: selected ? 3 : 1,
+              }}
+              eventHandlers={{ click: () => onSelect?.(c.id) }}
             >
               <Popup>
                 <div className="text-[12px] leading-relaxed">

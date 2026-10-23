@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useApp } from "@/lib/store";
 import { eur, eurM2, int, monthYear, pct } from "@/lib/format";
@@ -46,6 +46,14 @@ export function SaleComps() {
   const [addr, setAddr] = useState(property.address || "");
   const [geoStatus, setGeoStatus] = useState<"idle" | "loading" | "error">("idle");
   const [mode, setMode] = useState<"radius" | "polygon">("radius");
+  // Map ↔ table linking: clicked pin highlights its row; hovered row opens its pin's popup.
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [hoverId, setHoverId] = useState<string | null>(null);
+  const selectedRowRef = useRef<HTMLTableRowElement | null>(null);
+  useEffect(() => {
+    selectedRowRef.current?.scrollIntoView({ block: "nearest" });
+  }, [selectedId]);
+
   const located = property.latitude != null && property.longitude != null;
   const showDist = mode === "radius" && radiusKm != null;
 
@@ -239,6 +247,9 @@ export function SaleComps() {
             drawable={mode === "polygon"}
             drawnArea={drawnArea}
             onDraw={setDrawnArea}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+            highlightId={hoverId}
           />
           <p className="mt-1.5 text-[11px] text-faint">
             Points verts : moins chers au m² que ce bien · rouges : plus chers · bleu : ce bien.
@@ -274,7 +285,16 @@ export function SaleComps() {
             }
           >
             {visibleSaleComps.map((c) => (
-              <tr key={c.id} className="transition hover:bg-slate-50/70">
+              <tr
+                key={c.id}
+                ref={c.id === selectedId ? selectedRowRef : undefined}
+                onMouseEnter={() => setHoverId(c.id)}
+                onMouseLeave={() => setHoverId(null)}
+                onClick={() => setSelectedId(c.id)}
+                className={`cursor-pointer transition ${
+                  c.id === selectedId ? "bg-navy-50" : "hover:bg-slate-50/70"
+                }`}
+              >
                 <Td className="text-slate-600">{c.address || "—"}</Td>
                 <Td>{monthYear(c.soldOn)}</Td>
                 <Td right strong>{eur(c.price)}</Td>

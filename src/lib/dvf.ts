@@ -1,4 +1,5 @@
 import { createClient, type Client } from "@libsql/client";
+import { pointInPolygon, ringBounds, type Ring } from "./geo";
 import type { DvfComp } from "./types";
 
 /**
@@ -113,6 +114,58 @@ export async function queryDvfByRadius(
     .sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0))
     .slice(0, limit)
     .map((c, i) => ({ ...c, id: `dvf-rad-${i}` }));
+}
+
+/**
+ * Comparable sales inside a free-form polygon (a map-drawn zone). Filters on the
+ * ring's lat/lon bounding box in SQL — SQLite can't do point-in-polygon — then
+ * refines in JS with a ray-casting test. Both property types are returned
+ * (apartments and houses mixed), each tagged with its own label.
+ */
+export async function queryDvfByPolygon(
+  ring: Ring,
+  opts: { roomsMin?: number; surfaceMin?: number; surfaceMax?: number } = {},
+  limit = MAX_ROWS,
+): Promise<DvfComp[]> {
+  if (ring.length < 3) return [];
+  const [minLat, minLon, maxLat, maxLon] = ringBounds(ring);
+
+  const where: string[] = [
+    "lat is not null",
+    "lat between ? and ?",
+    "lon between ? and ?",
+  ];
+  const args: (number | string)[] = [minLat, maxLat, minLon, maxLon];
+  if (opts.roomsMin != null) {
+    where.push("rooms >= ?");
+    args.push(opts.roomsMin);
+  }
+  if (opts.surfaceMin != null) {
+    where.push("surface >= ?");
+    args.push(opts.surfaceMin);
+  }
+  if (opts.surfaceMax != null) {
+    where.push("surface <= ?");
+    args.push(opts.surfaceMax);
+  }
+  args.push(MAX_ROWS);
+
+  const rs = await getClient().execute({
+    sql: `select price, surface, rooms, month, adresse, ville, lat, lon, type,
+                 round(price * 1.0 / surface) as price_m2
+          from sales
+          where ${where.join(" and ")}
+          limit ?`,
+    args,
+  });
+
+  return rs.rows
+    .map((r) => r as unknown as Row & { type: unknown })
+    .filter((row) => pointInPolygon(Number(row.lat), Number(row.lon), ring))
+    .slice(0, limit)
+    .map((row, i) =>
+      toComp(row, `dvf-zone-${i}`, typeLabel(String(row.type) === "M" ? "M" : "A")),
+    );
 }
 
 function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {

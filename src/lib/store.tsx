@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { COMPARABLES, DEFAULTS, MARKET, PROPERTY, RENT_COMPARABLES } from "./mock";
+import { pointInPolygon, type Ring } from "./geo";
 import { derive, scoreDeal, stats } from "./finance";
 import { startScrapeClient, pollScrapeClient, ScrapeClientError } from "./scrape-client";
 import type {
@@ -172,18 +173,7 @@ const isHouseType = (type: string) =>
   );
 
 /** A user-drawn area on the map: a polygon ring of [lat, lon] points. */
-export type DrawnArea = [number, number][];
-
-/** Ray-casting point-in-polygon (ring = [[lat, lon], …]). */
-function pointInPolygon(lat: number, lon: number, ring: DrawnArea): boolean {
-  let inside = false;
-  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-    const [yi, xi] = ring[i];
-    const [yj, xj] = ring[j];
-    if (yi > lat !== yj > lat && lon < ((xj - xi) * (lat - yi)) / (yj - yi) + xi) inside = !inside;
-  }
-  return inside;
-}
+export type DrawnArea = Ring;
 
 /** Fields the user types in when the URL import can't be used. */
 export type ManualEntry = {
